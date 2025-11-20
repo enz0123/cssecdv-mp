@@ -229,6 +229,16 @@ function checkLoginForm(){
         return false;
     }
 
+    if(username.length > 20){
+        alert("Username must be less than 20 characters.");
+        return false;
+    }
+
+    if(password.length > 20){
+        alert("Password must be less than 20 characters.");
+        return false;
+    }
+
     if(checkWhiteSpace(username) || checkWhiteSpace(password)){
         alert("Username and password must not contain white space.");
         return false;
@@ -242,11 +252,30 @@ function checkCreateAccountForm(){
     let username = document.forms["create-account-form"]["username"].value;
     let password = document.forms["create-account-form"]["password"].value;
     let confirmPassword = document.forms["create-account-form"]["confirm-password"].value;
+    let description = document.forms["create-account-form"]["description"].value;
+
 
     if(username.length < 1 || password.length < 1 || confirmPassword.length < 1){
         alert("Required fields must not be empty.");
         return false;
     }
+
+    if(username.length > 20){
+        alert("Username must be less than 20 characters.");
+        return false;
+    }
+
+    if(password.length > 20){
+        alert("Password must be less than 20 characters.");
+        return false;
+    }
+
+    if(description.length > 500){
+        alert("Bio must be less than 500 characters.");
+        return false;
+    }
+
+
 
     if(checkWhiteSpace(username) || checkWhiteSpace(password) || checkWhiteSpace(confirmPassword)){
         alert("Username and password must not contain white space.");
