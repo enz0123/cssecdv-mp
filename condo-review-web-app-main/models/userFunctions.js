@@ -37,7 +37,7 @@ async function updateAverageRating(condoId){
     });
 }
 
-async function addPasswordToHistory(user, newPassword){
+async function addPasswordToHistory(username, newPassword){
     try{
         const user = await userModel.findOne({user: username})
         if(!user) return [404, 'User not found', null];
@@ -61,7 +61,10 @@ async function addPasswordToHistory(user, newPassword){
 async function changePassword(username, newPassword){
     try{
         const user = await userModel.findOne({user: username})
-        if(!user) return [404, 'User not found', null];
+        if(!user) {
+            console.log("1")
+            return [404, 'User not found', null];
+        }
 
         const history = await passwordModel.find({userId: user._id}).sort({changedAt: -1});
 
@@ -70,16 +73,24 @@ async function changePassword(username, newPassword){
             const latestPassword = history[0];
 
             if((new Date() - latestPassword.changedAt) < 24*60*60*1000){
-                return [400, 'Password was changed less than 24 hours ago', null];
+                console.log("2")
+                return [400, 'Error. Password was changed less than 24 hours ago', user];
             }
 
             for(const entry of history){
                 const isSame = await bcrypt.compare(newPassword, entry.password);
                 if(isSame){
-                    return [400, 'New password cannot be the same as any of the previous passwords', null];
+                    return [400, 'Error. New password cannot be the same as any of the previous passwords', user];
                 }
             }
         }
+
+        
+        
+        const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+        user.pass = hashedPassword;
+        await user.save();
+        await addPasswordToHistory(username, newPassword);
 
         return [200, 'Password changed successfully', user];
     }catch(error){
@@ -95,17 +106,18 @@ async function findUser(username, password){
         
         const user = await userModel.findOne({ user: username });
         if (!user) {
-            return [404, 'User not found', 0, "", "", "Condo Bro"];
+            return [401, 'Invalid Username or Password', user];
         }
 
         // Compare passwords
         const passwordMatch = await bcrypt.compare(password, user.pass);
 
         if (!passwordMatch) {
-            return [401, 'Invalid password', user];
+            return [401, 'Invalid Username or Password', user];
         }
 
         // Authentication successful
+        console.log('User authenticated:', username);
         return [200, 'Login successful', user];
         //res.status(200).json({ message: 'Login successful', user: user });
     } catch (error) {
@@ -137,9 +149,10 @@ async function createAccount(username, password, picture, bio) {
         bio: bio
         });
         
-        return user.save().then(function(login) {
+        return user.save().then(async function(login) {
             console.log('Account created');
-
+            
+            await addPasswordToHistory(username, password);
             return [true, 200, 'Account created successfully'];
            // resp.status(200).send({ success: true, message: 'Account created successfully' });
         }).catch(function(error) {
@@ -263,3 +276,5 @@ module.exports.filterEditData = filterEditData;
 module.exports.createReview = createReview;
 module.exports.createComment = createComment;
 module.exports.updateAverageRating = updateAverageRating;
+module.exports.changePassword = changePassword;
+module.exports.addPasswordToHistory = addPasswordToHistory;

@@ -73,6 +73,28 @@ function add(server){
         res.status(findStatus).json({message: findMessage, picture: user.picture});
     });
 
+    server.post('/change-password', async (req, resp) => {
+        const username = req.session.username;
+        const currentPassword = req.body.currentPassword;
+        const newPassword = req.body.newPassword;
+
+        let changeStatus, changeMessage;
+
+        console.log("Changing password for user:", username);
+
+        [changeStatus, changeMessage, user] = await userFunctions.findUser(username, currentPassword);
+
+        if (changeStatus !== 200) {
+            resp.status(changeStatus).json({message: "Invalid current password"}); 
+            console.log("Invalid current password for user:", username);
+            return;  
+        }
+
+        [changeStatus, changeMessage, user] = await userFunctions.changePassword(username, newPassword);
+        
+        resp.status(changeStatus).json({message: changeMessage});
+    });
+
 
     // get profile GET
     server.get('/profile/:username', async (req, resp) => {

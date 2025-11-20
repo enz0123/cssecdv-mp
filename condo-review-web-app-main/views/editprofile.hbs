@@ -29,4 +29,23 @@
             <button id="edit-save-button" type="submit">Save Changes</button>
     </div>
 </form>
+<button id="change-password-button">Change Password</button>
+<div id="change-password-popup" class="change-password-popup">
+    <div class="change-password-content">
+        <span class="close-button" id="close-change-password">&times;</span>
+        <h2>Change Password</h2>
+        <form id="changePasswordForm" method="post">
+            <label for="current-password">Current Password:</label>
+            <input type="password" id="current-password" name="current-password" required>
+
+            <label for="new-password">New Password:</label>
+            <input type="password" id="new-password" name="new-password" required>
+
+            <label for="confirm-new-password">Confirm New Password:</label>
+            <input type="password" id="confirm-new-password" name="confirm-new-password" required>
+
+            <button type="submit">Update Password</button>
+        </form>
+    </div>
+
 
