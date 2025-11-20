@@ -253,6 +253,12 @@ function checkCreateAccountForm(){
         return false;
     }
 
+    //Ensure password is at least 8 characters, 1 uppercase, 1 lowercase, 1 number, 1 special character
+    if((password).length < 9 || !(/[a-z]/.test(password)) || !(/[A-Z]/.test(password)) || !(/[0-9]/.test(password)) || !(/[\W_]/.test(password))){
+        alert("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
+        return false;
+    }
+
     if(password !== confirmPassword){
         alert("Passwords do not match. Please try again.");
         return false;
