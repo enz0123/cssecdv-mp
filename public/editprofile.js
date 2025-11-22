@@ -1,6 +1,8 @@
 $(document).ready(function() {
     $('#change-password-popup').hide();
 
+    
+
 
 
     $('#change-password-button').on('click', function() {

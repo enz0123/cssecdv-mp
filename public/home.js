@@ -50,6 +50,11 @@ $(document).ready(function(){
         var text = $("#condo-name").val();
         text = text.toUpperCase();
 
+        if(text.length > 500){
+            alert('Search text too long!');
+            return;
+        }
+
         $.post(
             'search-condo',
             {text: text},

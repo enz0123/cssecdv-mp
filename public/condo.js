@@ -8,6 +8,10 @@ $(document).ready(function(){
         var text = $("#search-review-input").val().toUpperCase();
         var condoId = window.location.pathname.split('/condo/')[1];
 
+        if(text.length > 500){
+            alert('Search text too long!');
+            return;
+        }
         
         $.post(
             'search-review',
@@ -122,6 +126,16 @@ $(document).ready(function(){
             return; // Exit the function if validation fails
         }
 
+        if(title.length > 100){
+            alert('Title too long! (max 100 characters)');
+            return;
+        }
+
+        if(content.length > 500){
+            alert('Content too long! (max 500 characters)');
+            return;
+        }
+
         // Get uploaded image if available
         var image = $("#add-image").prop('files')[0];
         var imagePath;
@@ -185,6 +199,11 @@ $(document).ready(function(){
             if (!content) {
                 alert("Please put a comment first.");
                 return; // Exit the function if validation fails
+            }
+
+            if(content.length > 500){
+                alert('Comment too long! (max 500 characters)');
+                return;
             }
 
             // Get form data

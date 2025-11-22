@@ -76,6 +76,15 @@ $(document).ready(function() {
             return;
         }
 
+        if(editedTitle.length > 100){
+            alert('Title too long! (max 100 characters)');
+            return;
+        }
+        if(editedContent.length > 500){
+            alert('Content too long! (max 500 characters)');
+            return;
+        }
+
         // Get uploaded image if available
         var image = $("#add-image").prop('files')[0];
         var imagePath;
@@ -129,6 +138,11 @@ $(document).ready(function() {
             return;
         }
 
+        if(editedContent.length > 500){
+            alert('Content too long! (max 500 characters)');
+            return;
+        }
+
         var date = new Date().toLocaleDateString();
 
         // Continue with review submission
@@ -149,6 +163,7 @@ $(document).ready(function() {
         const education = $("#editProfileForm #education").val();
         const city = $("#editProfileForm #city").val();
 
+
         var formData = {};
 
         if (name !== "") {
@@ -165,8 +180,33 @@ $(document).ready(function() {
         if (city !== "") formData.city = city;
 
         if (Object.keys(formData).length === 0 && !image) {
-            alert("Nothing was changed.");
+            alert(" changed.");
             window.location.href = "/profile/" + $("#username-display").text();
+            return;
+        }
+
+        if(name.length > 20){
+            alert('Name too long! (max 20 characters)');
+            return;
+        }
+
+        if(bio.length > 500){
+            alert('Bio too long! (max 500 characters)');
+            return;
+        }
+
+        if(education.length > 100){
+            alert('Education too long! (max 100 characters)');
+            return;
+        }
+
+        if(city.length > 100){
+            alert('City too long! (max 100 characters)');
+            return;
+        }
+
+        if(email.length > 100){
+            alert('Email too long! (max 100 characters)');
             return;
         }
 
