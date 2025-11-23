@@ -5,6 +5,7 @@ const condoModel = require('../models/Condo');
 const passwordModel = require('../models/Password');
 const loginModel = require('./LoginAttempt');
 const blockedUserModel = require('./blockedUser');
+const securityQuestionModel = require('./SecurityQuestion');
 
 // can be added to hash the password for confidentiality
 const bcrypt = require('bcrypt'); 
@@ -216,7 +217,27 @@ async function findUser(username, password){
     }
 }
 
-async function createAccount(username, password, picture, bio) {
+async function addSecurityQuestions(userId, securityQn1, securityQn2, securityAnswer1, securityAnswer2){
+    try{
+        const securityQuestion = securityQuestionModel({
+                userId: userId,
+                securityQuestion1: securityQn1,
+                securityQuestion2: securityQn2,
+                securityAnswer1: securityAnswer1,
+                securityAnswer2: securityAnswer2
+            })
+
+        await securityQuestion.save()
+        return
+    } catch (error){
+        console.log("Error saving security questions.")
+    }
+
+
+
+}
+
+async function createAccount(username, password, picture, bio, securityQn1, securityQn2, securityAnswer1, securityAnswer2) {
     // encrypt password
     let encryptedPass = "";
 
@@ -240,6 +261,10 @@ async function createAccount(username, password, picture, bio) {
         
         return user.save().then(async function(login) {
             console.log('Account created');
+
+            const newUser = await userModel.findOne({user: username})
+
+            await addSecurityQuestions(newUser._id, securityQn1, securityQn2, securityAnswer1, securityAnswer2)
             
             await addPasswordToHistory(username, password);
             return [true, 200, 'Account created successfully'];

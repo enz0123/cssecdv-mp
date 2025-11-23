@@ -39,7 +39,7 @@ function add(server){
     server.post('/create-account', async (req, resp) => {
         let createSuccess, createStatus, createMessage;
 
-       [createSuccess, createStatus, createMessage] = await userFunctions.createAccount(req.body.username, req.body.password, req.body.picture, req.body.bio);
+       [createSuccess, createStatus, createMessage] = await userFunctions.createAccount(req.body.username, req.body.password, req.body.picture, req.body.bio, req.body.securityQn1, req.body.securityQn2, req.body.securityAnswer1, req.body.securityAnswer2);
 
         resp.status(createStatus).send({success: createSuccess, message: createMessage});
     });

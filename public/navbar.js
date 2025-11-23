@@ -71,6 +71,10 @@ $(document).ready(function(){
             password: $("#create-account-form input[name='password']").val(),
             picture: iconPath,
             bio: $("#create-account-form textarea[name='description']").val(),
+            securityQn1: $("#securityQuestion1").val(),
+            securityQn2: $("#securityQuestion2").val(),
+            securityAnswer1: $("#security-answer-1").val(),
+            securityAnswer2: $("#security-answer-2").val()
         };
 
         $("#create-account").hide();
@@ -260,6 +264,13 @@ function checkCreateAccountForm(){
     let confirmPassword = document.forms["create-account-form"]["confirm-password"].value;
     let description = document.forms["create-account-form"]["description"].value;
 
+    let securityQn1 = $("#security-answer-1").val()
+    let securityQn2 = $("#security-answer-2").val()
+
+    if(securityQn1.length > 100 || securityQn2.length > 100){
+        alert("Answer to Security Questions must be less than 100 characters.")
+        return false;
+    }
 
     if(username.length < 1 || password.length < 1 || confirmPassword.length < 1){
         alert("Required fields must not be empty.");
@@ -280,6 +291,8 @@ function checkCreateAccountForm(){
         alert("Bio must be less than 500 characters.");
         return false;
     }
+
+
 
 
 
