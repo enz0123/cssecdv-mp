@@ -1,4 +1,5 @@
 $(document).ready(function(){
+
     $.get(
         'loggedInStatus',
         function(data, status){
@@ -116,8 +117,12 @@ $(document).ready(function(){
                 showLogInView();
                 $("#login").hide();
                 updateDropdownText(username); // changes the dropdown
+
+                console.log(response.message)
+                
+                alert("Welcome to The Condo Bro, " + username + " " + response.message);
+
                 window.location.href="/";
-                // alert("Welcome to The Condo Bro, " + username);
             })
             .fail(function(xhr, status, error) {
                 // Login failed
@@ -197,6 +202,7 @@ $(document).ready(function(){
             window.location.href = "/";       
         }
     });
+
 });
 
 function updateDropdownText(username) { 
@@ -212,7 +218,7 @@ function showLogInView(){
     $(".nav-logged-in").show();
 }
 
-function checkWhiteSpace(text){
+function checkWhiteSpace(text){login
     if(text.indexOf(' ') !== -1){
         return true;
     }

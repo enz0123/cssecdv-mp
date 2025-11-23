@@ -59,7 +59,28 @@ function add(server){
 
         [findStatus, findMessage, user] = await userFunctions.findUser(username, password);
         
+        if(user){
+            const isBlocked = await userFunctions.isUserBlocked(user._id);
+            if(isBlocked.blocked){
+                findStatus = 403;
+                findMessage = "Your account is temporarily blocked due to multiple failed login attempts. Please try again in " + isBlocked.minutesLeft + " minutes.";
+                user = null;
+                
+                userFunctions.recordLoginAttempt(user._id, false);
+                res.status(findStatus).json({message: findMessage, picture: user ? user.picture : null});
+                return;
+            }
+
+
+        }
+
         if (findStatus === 200) {
+            const loginReport = await userFunctions.getLastLoginAttempt(user._id)
+
+            findMessage = findMessage + loginReport
+
+            userFunctions.recordLoginAttempt(user._id, true);
+
             if (rememberMe === 'true') 
                 req.session.cookie.expires = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000); // 21 days 
 
@@ -68,9 +89,11 @@ function add(server){
             req.session.role = user.role;
             req.session.isAuthenticated = true;
             req.session._id = user._id;
+        } else if (user){
+            userFunctions.recordLoginAttempt(user._id, false);
         }
 
-        res.status(findStatus).json({message: findMessage, picture: user.picture});
+        res.status(findStatus).json({message: findMessage, picture: user ? user.picture : null});
     });
 
     server.post('/change-password', async (req, resp) => {
@@ -144,11 +167,27 @@ function add(server){
 
     // get edit profile GET
     server.get('/edit-profile/', function(req, resp) {
-        resp.render('editprofile',{
-            layout: 'index',
-            title: 'Edit Profile',
-            isEditProfile: true
+        if (req.session && req.session.isAuthenticated) {
+            resp.render('editprofile',{
+                layout: 'index',
+                title: 'Edit Profile',
+                isEditProfile: true
         });
+        } else {
+            condoModel.find().lean().then(function(condos){
+                for(const condo of condos) {
+                    condo.description = condo.description.slice(0, 150) + "...";
+                }
+                
+                resp.render('home',{
+                    layout: 'index',
+                    title: 'Home Page',
+                    isHome: true,
+                    condos: condos
+                });
+            });
+        }
+
     });
 
     server.patch('/edit-profile-submit', async (req, resp) => {

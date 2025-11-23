@@ -3,10 +3,58 @@ const reviewModel = require('../models/Review');
 const likeModel = require('../models/Like');
 const condoModel = require('../models/Condo');
 const passwordModel = require('../models/Password');
+const loginModel = require('./LoginAttempt');
+const blockedUserModel = require('./blockedUser');
 
 // can be added to hash the password for confidentiality
 const bcrypt = require('bcrypt'); 
 const saltRounds = 10;
+
+async function isUserBlocked(userId){
+    try {
+        const blockedEntry = await blockedUserModel.findOne({userId: userId, validDate: { $gt: new Date() }});
+        if(blockedEntry){
+            const minutesLeft = Math.ceil((blockedEntry.validDate - new Date()) / (60 * 1000));
+            return {blocked: true, minutesLeft: minutesLeft};
+        }
+
+        return {blocked: false, minutesLeft: null}
+    } catch(error){
+        console.error('Error checking blocked user status:', error);
+        return false;
+    }
+}
+
+async function recordLoginAttempt(userId, success){
+    try {
+        const loginAttempt = loginModel({
+            userId: userId,
+            success: success
+        });
+
+        await loginAttempt.save();
+
+        //Check if max attempts reached within 15 minutes, block user if necessary
+        if(!success){
+            var fifteenMinutesAgo = new Date(Date.now() - 15*60*1000);
+            var loginAttempts = await loginModel.find({
+                userId: userId,
+                success: false,
+                loginAt: { $gte: fifteenMinutesAgo }
+            });
+            if(loginAttempts.length >= 5){
+                var validDate = new Date(Date.now() + 15*60*1000);
+                const blockedUser = blockedUserModel({
+                    userId: userId,
+                    validDate: validDate
+                });
+                await blockedUser.save();
+            }
+        }
+    } catch (error){
+        console.error('Error recording login attempt:', error);
+    }
+}
 
 async function updateAverageRating(condoId){
     let total = 0;
@@ -99,6 +147,47 @@ async function changePassword(username, newPassword){
     }
 }
 
+async function getLastLoginAttempt(userId){
+    try{
+        const lastLoginAttempt = await loginModel.findOne({userId: userId}).sort({loginAt: -1})
+
+        if(lastLoginAttempt){
+            const date = lastLoginAttempt.loginAt
+            const datePart = date.toLocaleDateString("en-PH", {
+            timeZone: "Asia/Manila",
+            year: "numeric",
+            month: "long",
+            day: "numeric"
+            });
+
+            const timePart = date.toLocaleTimeString("en-PH", {
+            timeZone: "Asia/Manila",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true
+            });
+
+            var status
+
+            if(lastLoginAttempt.success){
+                status = 'Successful'
+            } else {
+                status = 'Failed'
+            }
+
+            // Combine them
+            const readable = `Last login attempt: ${datePart} at ${timePart} (${status})`;
+
+            console.log(readable);
+            return readable
+        }
+
+        return "Last login attempt N/A"
+    } catch (error) {
+        console.log("Error trying to get last login attempt.")
+    }
+}
+
 async function findUser(username, password){
     
     try {
@@ -106,7 +195,7 @@ async function findUser(username, password){
         
         const user = await userModel.findOne({ user: username });
         if (!user) {
-            return [401, 'Invalid Username or Password', user];
+            return [401, 'Invalid Username or Password', null];
         }
 
         // Compare passwords
@@ -117,8 +206,8 @@ async function findUser(username, password){
         }
 
         // Authentication successful
-        console.log('User authenticated:', username);
-        return [200, 'Login successful', user];
+        console.log('User password match:', username);
+        return [200, 'Login successful. \n', user];
         //res.status(200).json({ message: 'Login successful', user: user });
     } catch (error) {
         console.error('Error during login:', error);
@@ -278,3 +367,6 @@ module.exports.createComment = createComment;
 module.exports.updateAverageRating = updateAverageRating;
 module.exports.changePassword = changePassword;
 module.exports.addPasswordToHistory = addPasswordToHistory;
+module.exports.recordLoginAttempt = recordLoginAttempt;
+module.exports.isUserBlocked = isUserBlocked;
+module.exports.getLastLoginAttempt = getLastLoginAttempt;
