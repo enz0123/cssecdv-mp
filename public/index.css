@@ -138,6 +138,19 @@ body {
     display: block;
 }
 
+.forgot-link {
+    color: rgb(112, 112, 192);
+    text-decoration: underline;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.forgot-link:hover {
+    color: rgb(129, 129, 165);
+    text-shadow: 0 0 3px rgba(0,0,0,0.2);
+}
+
+
 .nav-dropdown-item {
     padding: 10px;
 }

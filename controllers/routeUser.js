@@ -96,6 +96,32 @@ function add(server){
         res.status(findStatus).json({message: findMessage, picture: user ? user.picture : null});
     });
 
+    server.post('/resetpassword', async (req, resp) => {
+        console.log('Resetting password...')
+        const username = req.body.username
+        const answer1 = req.body.answer1
+        const answer2 = req.body.answer2
+
+        try{
+            const user = await userModel.findOne({user: username})
+
+            if(user){
+                let [status, message] = await userFunctions.checkSecurityQuestions(user._id, answer1, answer2)
+                
+                if(status === 200){
+                    await userFunctions.resetPassword(user._id)
+                }
+
+                resp.status(status).json({message: message})
+            } else {
+                resp.status(401).json({message: "Error. Invalid details."})
+                return
+            }
+        } catch (error){
+            console.log('Error resetting password.' + error)
+        }
+    });
+
     server.post('/change-password', async (req, resp) => {
         const username = req.session.username;
         const currentPassword = req.body.currentPassword;
@@ -116,6 +142,41 @@ function add(server){
         [changeStatus, changeMessage, user] = await userFunctions.changePassword(username, newPassword);
         
         resp.status(changeStatus).json({message: changeMessage});
+    });
+
+    server.get('/forgot-password', async (req, resp) => {
+        const username = req.query.username
+
+        console.log("Hello: " + username)
+
+        try {
+            var user = await userModel.findOne({user: username})
+
+            var securityQuestions
+
+            //If found, get security questions. If not, give standard questions
+            if(user){
+                console.log('User found.')
+                securityQuestions = await userFunctions.getSecurityQuestions(user._id)
+            } else {
+                console.log('User not found.')
+                securityQuestions = await userFunctions.getSecurityQuestions(null)
+            }
+
+            //console.log(securityQuestions)
+
+            resp.render('resetpassword', {
+                layout: 'index',
+                title: 'Reset Password',
+                securityQuestions: securityQuestions,
+                username: username,
+                isResetPassword: true
+            });
+
+
+        } catch (error) {
+            console.log('Error occurred during forgot password steps.')
+        }
     });
 
 

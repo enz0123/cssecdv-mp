@@ -1,5 +1,23 @@
 $(document).ready(function(){
 
+    $("#forgot-password").click(() => {
+        let logUsername = $('#log-username').val()
+
+        if(logUsername.length < 1){
+            alert('Please input a username to continue.')
+            return
+        }
+
+        if(logUsername.length > 20){
+            alert('Username must be less than 20 characters before continuing.')
+            return
+        }
+
+        window.location.href = '/forgot-password?username=' + encodeURIComponent(logUsername)
+        
+    });
+
+
     $.get(
         'loggedInStatus',
         function(data, status){

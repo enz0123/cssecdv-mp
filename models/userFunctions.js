@@ -11,6 +11,15 @@ const securityQuestionModel = require('./SecurityQuestion');
 const bcrypt = require('bcrypt'); 
 const saltRounds = 10;
 
+const securityQuestionsObj = {
+    1: "What was the name of your first pet?",
+    2: "What street did you grow up on?",
+    3: "What was your childhood nickname?",
+    4: "What was your first concert?",
+    5: "What was the first movie you saw in a theatre?",
+    6: "What was the first car you rode in?"
+};
+
 async function isUserBlocked(userId){
     try {
         const blockedEntry = await blockedUserModel.findOne({userId: userId, validDate: { $gt: new Date() }});
@@ -23,6 +32,20 @@ async function isUserBlocked(userId){
     } catch(error){
         console.error('Error checking blocked user status:', error);
         return false;
+    }
+}
+
+async function getSecurityQuestions(userId){
+    try{   
+        if(userId){
+            const securityQuestions = await securityQuestionModel.findOne({userId: userId})
+
+            return {securityQn1: securityQuestionsObj[securityQuestions.securityQuestion1], securityQn2: securityQuestionsObj[securityQuestions.securityQuestion2]}
+        } else {
+            return {securityQn1: securityQuestionsObj[1], securityQn2: securityQuestionsObj[2]}
+        }
+    } catch (error) {
+        console.log('Error occurred fetching security questions. ' + error)
     }
 }
 
@@ -217,6 +240,34 @@ async function findUser(username, password){
     }
 }
 
+async function resetPassword(userId){
+    try{
+        const hashedPassword = await bcrypt.hash("#Dummy123", saltRounds);
+        const user = await userModel.findOne({_id: userId})
+
+        user.pass = hashedPassword;
+        await user.save();
+        console.log("User's password was reset successfully.");
+        
+    } catch(error){
+        console.log("Error setting to dummy password. " + error)
+    }
+}
+
+async function checkSecurityQuestions(userId, answer1, answer2){
+    try{
+        const securityQuestions = await securityQuestionModel.findOne({userId: userId})
+
+        if(securityQuestions.securityAnswer1 != answer1 || securityQuestions.securityAnswer2 != answer2)
+            return [401, "Error. Invalid details."]
+
+        return [200, "Password reset success. Please use #Dummy123 as your password in your next login."]
+
+    } catch(error){
+        console.log("Error in checkSecurityQuestions " + error)
+    }
+}
+
 async function addSecurityQuestions(userId, securityQn1, securityQn2, securityAnswer1, securityAnswer2){
     try{
         const securityQuestion = securityQuestionModel({
@@ -395,3 +446,6 @@ module.exports.addPasswordToHistory = addPasswordToHistory;
 module.exports.recordLoginAttempt = recordLoginAttempt;
 module.exports.isUserBlocked = isUserBlocked;
 module.exports.getLastLoginAttempt = getLastLoginAttempt;
+module.exports.getSecurityQuestions = getSecurityQuestions;
+module.exports.checkSecurityQuestions = checkSecurityQuestions;
+module.exports.resetPassword = resetPassword;
