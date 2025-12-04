@@ -84,6 +84,52 @@ for(i = 0; i < controllers.length; i++){
     ctrl.add(server);
 }
 
+// 404 handler – runs if no route matched
+server.use((req, res, next) => {
+    const statusCode = 404;
+    const message = 'The page you requested could not be found.';
+
+    if (req.accepts('html')) {
+        return res.status(statusCode).render('error', {
+            layout: 'index',      // or remove if your error page is standalone
+            status: statusCode,
+            message: message
+        });
+    }
+
+    if (req.accepts('json')) {
+        return res.status(statusCode).json({ error: message });
+    }
+
+    res.status(statusCode).type('txt').send(message);
+});
+
+// General error handler
+server.use((err, req, res, next) => {
+    // Log details on the server ONLY
+    console.error('Unexpected error:', err);
+
+    const statusCode = err.status || 500;
+    const genericMessage = statusCode === 500
+        ? 'An unexpected error occurred. Please try again later.'
+        : 'A request error occurred. Please try again.';
+
+    if (req.accepts('html')) {
+        return res.status(statusCode).render('error', {
+            layout: 'index',
+            status: statusCode,
+            message: genericMessage
+        });
+    }
+
+    if (req.accepts('json')) {
+        return res.status(statusCode).json({ error: genericMessage });
+    }
+
+    res.status(statusCode).type('txt').send(genericMessage);
+});
+
+
 //Only at the very end should the database be closed.
 function finalClose(){
     console.log('Close connection at the end!');

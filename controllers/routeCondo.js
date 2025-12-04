@@ -71,7 +71,8 @@ function add(server){
         } catch (err) {
             // Handle errors
             console.error('Error fetching data from MongoDB', err);
-            resp.status(500).json({ error: 'Failed to fetch data' });
+            err.status = 500; 
+            next(err); 
         }
     });    
 }

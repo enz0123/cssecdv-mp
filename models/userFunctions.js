@@ -306,7 +306,7 @@ async function createAccount(username, password, picture, bio, securityQn1, secu
         email: "none",
         role: "Condo Bro",
         school: "not specified",
-        city: "not specified,",
+        city: "not specified",
         bio: bio
         });
         
