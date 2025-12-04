@@ -16,6 +16,6 @@ const passwordSchema = new mongoose.Schema({
 });
 
 // Create the PasswordHistory model
-const passwordModel = mongoose.model('password', passwordSchema);
+const passwordModel = mongoose.model('password', passwordSchema, 'auth_passwords');
 
 module.exports = passwordModel;

@@ -6,6 +6,7 @@ const passwordModel = require('../models/Password');
 const loginModel = require('./LoginAttempt');
 const blockedUserModel = require('./blockedUser');
 const securityQuestionModel = require('./SecurityQuestion');
+const securityLogModel = require('./SecurityLog');
 
 // can be added to hash the password for confidentiality
 const bcrypt = require('bcrypt'); 
@@ -49,7 +50,7 @@ async function getSecurityQuestions(userId){
     }
 }
 
-async function recordLoginAttempt(userId, success){
+async function recordLoginAttempt(userId, success) {
     try {
         const loginAttempt = loginModel({
             userId: userId,
@@ -58,24 +59,41 @@ async function recordLoginAttempt(userId, success){
 
         await loginAttempt.save();
 
-        //Check if max attempts reached within 15 minutes, block user if necessary
-        if(!success){
-            var fifteenMinutesAgo = new Date(Date.now() - 15*60*1000);
-            var loginAttempts = await loginModel.find({
+        // Check if max attempts reached within 15 minutes, block user if necessary
+        if (!success) {
+            const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+
+            const loginAttempts = await loginModel.find({
                 userId: userId,
                 success: false,
                 loginAt: { $gte: fifteenMinutesAgo }
             });
-            if(loginAttempts.length >= 5){
-                var validDate = new Date(Date.now() + 15*60*1000);
+
+            if (loginAttempts.length >= 5) {
+                const validDate = new Date(Date.now() + 15 * 60 * 1000);
                 const blockedUser = blockedUserModel({
                     userId: userId,
                     validDate: validDate
                 });
                 await blockedUser.save();
+
+                // log the lockout event (AUTH_LOCKOUT)
+                try {
+                    const user = await userModel.findById(userId).lean();
+                    await securityLogModel.create({
+                        eventType: 'AUTH_LOCKOUT',
+                        userId: userId,
+                        username: user ? user.user : undefined,
+                        route: 'POST /login',
+                        method: 'POST',
+                        message: 'Account locked due to repeated failed login attempts.'
+                    });
+                } catch (logError) {
+                    console.error('Error logging auth lockout:', logError);
+                }
             }
         }
-    } catch (error){
+    } catch (error) {
         console.error('Error recording login attempt:', error);
     }
 }
@@ -434,6 +452,36 @@ async function processReviews(reviews, userId){
     return reviews;
 }
 
+async function logValidationFailure(userId, username, route, method, message) {
+    try {
+        await securityLogModel.create({
+            eventType: 'VALIDATION_FAILURE',
+            userId,
+            username,
+            route,
+            method,
+            message
+        });
+    } catch (error) {
+        console.error('Error logging validation failure:', error);
+    }
+}
+
+async function logAccessControlFailure(userId, username, route, method, message) {
+    try {
+        await securityLogModel.create({
+            eventType: 'ACCESS_CONTROL_FAILURE',
+            userId,
+            username,
+            route,
+            method,
+            message
+        });
+    } catch (error) {
+        console.error('Error logging access control failure:', error);
+    }
+}
+
 module.exports.processReviews = processReviews;
 module.exports.findUser = findUser;
 module.exports.createAccount = createAccount;
@@ -449,3 +497,5 @@ module.exports.getLastLoginAttempt = getLastLoginAttempt;
 module.exports.getSecurityQuestions = getSecurityQuestions;
 module.exports.checkSecurityQuestions = checkSecurityQuestions;
 module.exports.resetPassword = resetPassword;
+module.exports.logValidationFailure = logValidationFailure;
+module.exports.logAccessControlFailure = logAccessControlFailure;

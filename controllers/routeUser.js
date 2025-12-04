@@ -2,6 +2,7 @@ const userModel = require('../models/User');
 const condoModel = require('../models/Condo');
 const reviewModel = require('../models/Review');
 const userFunctions = require('../models/userFunctions');
+const loginAttemptModel = require('../models/LoginAttempt');
 
 function add(server) {
 
@@ -80,65 +81,75 @@ function add(server) {
         });
     });
 
-    // Login
-    server.post('/login', async (req, res, next) => {
-        const { username, password, rememberMe } = req.body;
+    // Login POST 
+    server.post('/login', async (req, res) => {
+        const { username, password, rememberMe } = req.body;   
 
         let findStatus, findMessage, user;
 
-        try {
-            [findStatus, findMessage, user] = await userFunctions.findUser(username, password);
-
-            if (user) {
-                const isBlocked = await userFunctions.isUserBlocked(user._id);
-
-                if (isBlocked.blocked) {
-                    const blockedMessage =
-                        'Your account is temporarily locked due to multiple failed login attempts. ' +
-                        'Please try again in a few minutes.';
-
-                    await userFunctions.recordLoginAttempt(user._id, false);
-
-                    return res
-                        .status(403)
-                        .json({ message: blockedMessage, picture: null });
-                }
-            }
-
-            if (findStatus === 200 && user) {
-                const loginReport = await userFunctions.getLastLoginAttempt(user._id);
-                findMessage = 'Login successful.' + loginReport;
-
-                await userFunctions.recordLoginAttempt(user._id, true);
-
-                if (rememberMe === 'true') {
-                    req.session.cookie.expires = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000);
-                }
-
-                req.session.username = user.user;
-                req.session.picture = user.picture;
-                req.session.role = user.role;
-                req.session.isAuthenticated = true;
-                req.session._id = user._id;
-            } else {
-                findStatus = findStatus || 401;
-                findMessage = 'Error. Invalid username or password.';
-                if (user) {
-                    await userFunctions.recordLoginAttempt(user._id, false);
-                }
-            }
-
-            return res.status(findStatus).json({
-                message: findMessage,
-                picture: user ? user.picture : null
-            });
-        } catch (err) {
-            console.error('Error during login:', err);
-            err.status = 500;
-            next(err);
+        if (!username || !password) {
+            await userFunctions.logValidationFailure(
+                req.session ? req.session._id : null,
+                req.session ? req.session.username : null,
+                '/login',
+                'POST',
+                'Missing username or password.'
+            );
+            return res.status(400).json({ message: 'Error. Invalid details.' });
         }
-    });
 
+        [findStatus, findMessage, user] = await userFunctions.findUser(username, password);
+        
+        if (user) {
+            const isBlocked = await userFunctions.isUserBlocked(user._id);
+            if (isBlocked.blocked) {
+                findStatus = 403;
+                findMessage =
+                    'Your account is temporarily locked due to multiple failed login attempts. ' +
+                    'Please try again after a short period of time.';
+
+                // record failed attempt; recordLoginAttempt will also log lockout if threshold is hit
+                await userFunctions.recordLoginAttempt(user._id, false);
+
+                return res.status(findStatus).json({
+                    message: findMessage,
+                    picture: null
+                });
+            }
+        }
+
+        if (findStatus === 200 && user) {
+            const loginReport = await userFunctions.getLastLoginAttempt(user._id);
+
+            findMessage = 'Login successful.' + loginReport;
+
+            await userFunctions.recordLoginAttempt(user._id, true);
+
+            if (rememberMe === 'true') {
+                // 21 days
+                req.session.cookie.expires = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000);
+            }
+
+            req.session.username = user.user;
+            req.session.picture = user.picture;
+            req.session.role = user.role;
+            req.session.isAuthenticated = true;
+            req.session._id = user._id;
+        } else if (user) {
+            // Login failed but user exists → record failed attempt
+            await userFunctions.recordLoginAttempt(user._id, false);
+        }
+
+        if (findStatus !== 200) {
+            findStatus = findStatus || 401;
+            findMessage = 'Error. Invalid username or password.';
+        }
+
+        return res.status(findStatus).json({
+            message: findMessage,
+            picture: user ? user.picture : null
+        });
+    });
 
     // Reset password via security questions
     server.post('/resetpassword', async (req, resp, next) => {
@@ -169,35 +180,49 @@ function add(server) {
         }
     });
 
-    // Change password (logged-in)
-    server.post('/change-password', async (req, resp, next) => {
+    // Change password
+    server.post('/change-password', async (req, resp) => {
         const username = req.session.username;
         const currentPassword = req.body.currentPassword;
         const newPassword = req.body.newPassword;
 
         let changeStatus, changeMessage, user;
 
-        try {
-            console.log('Changing password for user:', username);
+        console.log("Changing password for user:", username);
 
-            [changeStatus, changeMessage, user] =
-                await userFunctions.findUser(username, currentPassword);
-
-            if (changeStatus !== 200) {
-                console.log('Invalid current password for user:', username);
-                return resp.status(400).json({ message: 'Error. Invalid details.' });
-            }
-
-            [changeStatus, changeMessage, user] =
-                await userFunctions.changePassword(username, newPassword);
-
-            resp.status(changeStatus).json({ message: changeMessage });
-        } catch (err) {
-            console.error('Error changing password:', err);
-            err.status = 500;
-            next(err);
+        if (!newPassword || newPassword.length < 8) {
+            await userFunctions.logValidationFailure(
+                req.session ? req.session._id : null,
+                username,
+                '/change-password',
+                'POST',
+                'New password does not meet minimum length requirement.'
+            );
+            return resp.status(400).json({ message: 'Error. Invalid details.' });
         }
+
+        [changeStatus, changeMessage, user] =
+            await userFunctions.findUser(username, currentPassword);
+
+        if (changeStatus !== 200) {
+            await userFunctions.logValidationFailure(
+                req.session ? req.session._id : null,
+                username,
+                '/change-password',
+                'POST',
+                'Current password did not match.'
+            );
+
+            console.log("Invalid current password for user:", username);
+            return resp.status(changeStatus).json({ message: 'Error. Invalid details.' });
+        }
+
+        [changeStatus, changeMessage, user] =
+            await userFunctions.changePassword(username, newPassword);
+        
+        resp.status(changeStatus).json({ message: changeMessage });
     });
+
 
 
     // Forgot password – show security questions page
@@ -286,65 +311,72 @@ function add(server) {
     });
 
     // Edit profile page
-    server.get('/edit-profile/', async (req, resp, next) => {
-        try {
-            if (req.session && req.session.isAuthenticated) {
-                return resp.render('editprofile', {
-                    layout: 'index',
-                    title: 'Edit Profile',
-                    isEditProfile: true
-                });
-            }
-
-            // Not authenticated → show home instead
-            const condos = await condoModel.find().lean();
-
-            for (const condo of condos) {
-                condo.description = condo.description.slice(0, 150) + '...';
-            }
-
-            resp.render('home', {
+    server.get('/edit-profile/', async function(req, resp) {
+        if (req.session && req.session.isAuthenticated) {
+            return resp.render('editprofile', {
                 layout: 'index',
-                title: 'Home Page',
-                isHome: true,
-                condos: condos
+                title: 'Edit Profile',
+                isEditProfile: true
             });
-        } catch (err) {
-            console.error('Error loading edit profile or home:', err);
-            err.status = 500;
-            next(err);
-        }
-    });
-
-    // Edit profile submit
-    server.patch('/edit-profile-submit', async (req, resp, next) => {
-        try {
-            const newData = userFunctions.filterEditData(req.body);
-
-            const result = await userModel.updateOne(
-                { user: req.session.username },
-                { $set: newData }
+        } else {
+            // Access control failure: not logged in but tried to access edit profile
+            await userFunctions.logAccessControlFailure(
+                req.session ? req.session._id : null,
+                req.session ? req.session.username : null,
+                '/edit-profile',
+                'GET',
+                'Unauthenticated user attempted to access edit profile page.'
             );
 
-            console.log('Update successful:', result);
-
-            if (newData.user !== undefined) req.session.username = newData.user;
-            if (newData.picture !== undefined)
-                req.session.picture = newData.picture.replace('public/', '');
-
-            resp.json({
-                message: 'Profile updated successfully!',
-                user: req.session.username
+            // Fallback: show home page
+            condoModel.find().lean().then(function(condos){
+                for (const condo of condos) {
+                    condo.description = condo.description.slice(0, 150) + "...";
+                }
+                
+                resp.render('home', {
+                    layout: 'index',
+                    title: 'Home Page',
+                    isHome: true,
+                    condos: condos
+                });
             });
-        } catch (err) {
-            console.error('Error updating profile:', err);
-
-            // If you want to keep the specific username-taken message, you can inspect err.code
-            // Otherwise, delegate to centralized error handler:
-            err.status = 500;
-            next(err);
         }
     });
+
+
+    // Edit profile submit
+    server.patch('/edit-profile-submit', async (req, resp) => {
+    // Access control: must be logged in
+        if (!req.session || !req.session.isAuthenticated) {
+            await userFunctions.logAccessControlFailure(
+                null,
+                null,
+                '/edit-profile-submit',
+                'PATCH',
+                'Unauthenticated user attempted to submit edit profile changes.'
+            );
+            return resp.status(401).json({ message: 'You must be logged in to edit your profile.' });
+        }
+
+        const newData = userFunctions.filterEditData(req.body);
+
+        userModel.updateOne({ "user": req.session.username }, { $set: newData })
+            .then(result => {
+                console.log("Update successful:", result);
+
+                if (newData.user !== undefined) req.session.username = newData.user;
+                if (newData.picture !== undefined) req.session.picture = newData.picture.replace('public/', '');
+
+                resp.json({ message: 'Profile updated successfully!', user: req.session.username });
+            })
+            .catch(err => {
+                console.error("Error updating document:", err);
+                resp.json({ message: 'Error. That username is already taken.', user: req.session.username });
+                return false;
+            });
+    });
+
 }
 
 module.exports.add = add;

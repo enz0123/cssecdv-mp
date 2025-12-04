@@ -15,5 +15,5 @@ const loginAttemptSchema = new mongoose.Schema({
     }
 });
 
-const loginAttemptModel = mongoose.model('login attempt', loginAttemptSchema);
+const loginAttemptModel = mongoose.model('login attempt', loginAttemptSchema, 'auth_login attempts');
 module.exports = loginAttemptModel;

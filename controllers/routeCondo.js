@@ -3,17 +3,28 @@ const reviewModel = require('../models/Review');
 const userFunctions = require('../models/userFunctions');
 
 function add(server) {
-    server.post('/filter-condo', async (req, resp, next) => {
-        try {
-            const rating = req.body.rating;
-            const searchQuery = { rating: { $gte: rating } };
-            const listOfCondos = [];
+    server.post('/filter-condo', async function(req, resp) {
+        const rating = Number(req.body.rating);
+        const listOfCondos = [];
 
+        if (Number.isNaN(rating) || rating < 1 || rating > 5) {
+            await userFunctions.logValidationFailure(
+                req.session ? req.session._id : null,
+                req.session ? req.session.username : null,
+                '/filter-condo',
+                'POST',
+                `Invalid rating filter value: ${req.body.rating}`
+            );
+            return resp.status(400).json({ message: 'Error. Invalid filter value.' });
+        }
+
+        const searchQuery = { rating: { $gte: rating } };
+
+        try {
             const condos = await condoModel.find(searchQuery);
 
             for (const item of condos) {
-                // Shorten description for display
-                item.description = item.description.slice(0, 150) + '...';
+                item.description = item.description.slice(0, 150) + "...";
                 listOfCondos.push(item);
             }
 

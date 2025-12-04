@@ -11,6 +11,5 @@ const securityQuestionSchema = new mongoose.Schema({
     securityAnswer2: String
 })
 
-const securityQuestionModel = mongoose.model('security question', securityQuestionSchema);
-
+const securityQuestionModel = mongoose.model('security question', securityQuestionSchema, 'auth_security questions');
 module.exports = securityQuestionModel;

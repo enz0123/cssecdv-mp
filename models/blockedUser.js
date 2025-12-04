@@ -11,5 +11,5 @@ const blockedUserSchema = new mongoose.Schema({
     }
 });
 
-const blockedUserModel = mongoose.model('blocked user', blockedUserSchema);
+const blockedUserModel = mongoose.model('blocked user', blockedUserSchema, 'auth_blocked users');
 module.exports = blockedUserModel;
