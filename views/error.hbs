@@ -1,2 +1,74 @@
-<h1>{{status}}</h1>
-<p>{{message}}</p>
+{{!-- views/error.hbs --}}
+
+<style>
+  .error-page {
+    min-height: calc(100vh - 80px); 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+
+  .error-card {
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+    padding: 32px 24px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    background: #ffffff;
+  }
+
+  .error-code {
+    font-size: 64px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .error-message {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  .error-subtext {
+    font-size: 14px;
+    color: #666666;
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+
+  .error-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 999px;
+    border: none;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    background-color: #1e88e5; /* match your theme if needed */
+    color: #ffffff;
+    cursor: pointer;
+  }
+
+  .error-btn:hover {
+    filter: brightness(0.95);
+  }
+</style>
+
+<div class="error-page">
+  <div class="error-card">
+    <div class="error-code">{{status}}</div>
+    <div class="error-message">{{message}}</div>
+
+    <p class="error-subtext">
+      {{#if_eq status 404}}
+        The page you’re looking for might have been moved, deleted, or never existed.
+      {{else}}
+        Something went wrong while processing your request. Please try again, or come back later.
+      {{/if_eq}}
+    </p>
+
+    <a href="/" class="error-btn">Back to Home</a>
+  </div>
+</div>

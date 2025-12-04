@@ -15,6 +15,8 @@ const session = require('express-session');
 const mongoStore = require('connect-mongodb-session')(session);
 const mongoURI = "mongodb://localhost:27017/condodb";
 
+const { notFoundHandler, errorHandler } = require('./middleware/error');
+
 server.use(session({
     secret: 'penguin-banana-jazz-1234',
     saveUninitialized: false, 
@@ -79,55 +81,13 @@ mongoose.connect(mongoURI);
 
 const controllers = ['routeUser', 'routeCondo', 'routeReview'];
 
-for(i = 0; i < controllers.length; i++){
+for(let i = 0; i < controllers.length; i++){
     const ctrl = require('./controllers/' + controllers[i]); 
     ctrl.add(server);
 }
 
-// 404 handler – runs if no route matched
-server.use((req, res, next) => {
-    const statusCode = 404;
-    const message = 'The page you requested could not be found.';
-
-    if (req.accepts('html')) {
-        return res.status(statusCode).render('error', {
-            layout: 'index',      // or remove if your error page is standalone
-            status: statusCode,
-            message: message
-        });
-    }
-
-    if (req.accepts('json')) {
-        return res.status(statusCode).json({ error: message });
-    }
-
-    res.status(statusCode).type('txt').send(message);
-});
-
-// General error handler
-server.use((err, req, res, next) => {
-    // Log details on the server ONLY
-    console.error('Unexpected error:', err);
-
-    const statusCode = err.status || 500;
-    const genericMessage = statusCode === 500
-        ? 'An unexpected error occurred. Please try again later.'
-        : 'A request error occurred. Please try again.';
-
-    if (req.accepts('html')) {
-        return res.status(statusCode).render('error', {
-            layout: 'index',
-            status: statusCode,
-            message: genericMessage
-        });
-    }
-
-    if (req.accepts('json')) {
-        return res.status(statusCode).json({ error: genericMessage });
-    }
-
-    res.status(statusCode).type('txt').send(genericMessage);
-});
+server.use(notFoundHandler);
+server.use(errorHandler);
 
 
 //Only at the very end should the database be closed.
