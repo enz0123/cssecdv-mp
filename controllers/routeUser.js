@@ -93,28 +93,25 @@ function add(server) {
                 const isBlocked = await userFunctions.isUserBlocked(user._id);
 
                 if (isBlocked.blocked) {
-                    findStatus = 403;
-                    findMessage =
-                        'Your account is temporarily blocked due to multiple failed login attempts. ' +
-                        'Please try again in ' + isBlocked.minutesLeft + ' minutes.';
+                    const blockedMessage =
+                        'Your account is temporarily locked due to multiple failed login attempts. ' +
+                        'Please try again in a few minutes.';
 
-                    // Record failed attempt under this user
                     await userFunctions.recordLoginAttempt(user._id, false);
 
                     return res
-                        .status(findStatus)
-                        .json({ message: findMessage, picture: null });
+                        .status(403)
+                        .json({ message: blockedMessage, picture: null });
                 }
             }
 
             if (findStatus === 200 && user) {
                 const loginReport = await userFunctions.getLastLoginAttempt(user._id);
-                findMessage = findMessage + loginReport;
+                findMessage = 'Login successful.' + loginReport;
 
                 await userFunctions.recordLoginAttempt(user._id, true);
 
                 if (rememberMe === 'true') {
-                    // 21 days
                     req.session.cookie.expires = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000);
                 }
 
@@ -123,12 +120,15 @@ function add(server) {
                 req.session.role = user.role;
                 req.session.isAuthenticated = true;
                 req.session._id = user._id;
-            } else if (user) {
-                // Login failed but user exists → record failed attempt
-                await userFunctions.recordLoginAttempt(user._id, false);
+            } else {
+                findStatus = findStatus || 401;
+                findMessage = 'Error. Invalid username or password.';
+                if (user) {
+                    await userFunctions.recordLoginAttempt(user._id, false);
+                }
             }
 
-            res.status(findStatus).json({
+            return res.status(findStatus).json({
                 message: findMessage,
                 picture: user ? user.picture : null
             });
@@ -138,6 +138,7 @@ function add(server) {
             next(err);
         }
     });
+
 
     // Reset password via security questions
     server.post('/resetpassword', async (req, resp, next) => {
@@ -184,7 +185,7 @@ function add(server) {
 
             if (changeStatus !== 200) {
                 console.log('Invalid current password for user:', username);
-                return resp.status(changeStatus).json({ message: 'Invalid current password' });
+                return resp.status(400).json({ message: 'Error. Invalid details.' });
             }
 
             [changeStatus, changeMessage, user] =
@@ -197,6 +198,7 @@ function add(server) {
             next(err);
         }
     });
+
 
     // Forgot password – show security questions page
     server.get('/forgot-password', async (req, resp, next) => {
