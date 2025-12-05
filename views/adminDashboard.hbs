@@ -1,0 +1,773 @@
+<div class="admin-page">
+  <div class="admin-container">
+    <h1 class="admin-title">Admin Dashboard</h1>
+    <p class="admin-subtitle">
+      Manage administrators, condo owners, Condo Bros, and audit trails from a single, secure dashboard.
+    </p>
+
+    {{!-- Top stats --}}
+    <div class="admin-stats-row">
+      <div class="admin-stat-card">
+        <div class="admin-stat-label">Total Users</div>
+        <div class="admin-stat-value">{{stats.totalUsers}}</div>
+      </div>
+      <div class="admin-stat-card">
+        <div class="admin-stat-label">Admins</div>
+        <div class="admin-stat-value">{{stats.adminCount}}</div>
+      </div>
+      <div class="admin-stat-card">
+        <div class="admin-stat-label">Owners</div>
+        <div class="admin-stat-value">{{stats.ownerCount}}</div>
+      </div>
+      <div class="admin-stat-card">
+        <div class="admin-stat-label">Condo Bros</div>
+        <div class="admin-stat-value">{{stats.clientCount}}</div>
+      </div>
+    </div>
+
+    {{!-- Tabs --}}
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-tab="tab-users">User Management</button>
+      <button class="admin-tab" data-tab="tab-roles">Roles &amp; Permissions</button>
+      <button class="admin-tab" data-tab="tab-logs">Audit Logs</button>
+    </div>
+
+    <div class="admin-tab-panels">
+
+      {{!-- TAB 1: USER MANAGEMENT (Add Admin / Owner / Condo Bro) --}}
+      <div id="tab-users" class="admin-tab-panel active">
+        <div class="admin-card">
+          <h2>Create Administrator / Owner / Condo Bro</h2>
+          <p class="admin-card-subtitle">
+            Use this form to create privileged accounts. Regular users can still sign up via the public Sign Up modal.
+          </p>
+
+          <form id="admin-create-user-form" class="admin-form">
+            <div class="admin-form-row">
+              <label>Username<span class="required">*</span></label>
+              <input type="text" id="admin-create-username" required>
+            </div>
+
+            <div class="admin-form-row">
+              <label>Password<span class="required">*</span></label>
+              <input type="password" id="admin-create-password" required>
+            </div>
+
+            <div class="admin-form-row">
+              <label>Confirm Password<span class="required">*</span></label>
+              <input type="password" id="admin-create-confirm-password" required>
+            </div>
+
+            <div class="admin-form-row">
+              <label>Role<span class="required">*</span></label>
+              <select id="admin-create-role" required>
+                <option value="Admin">Admin</option>
+                <option value="Owner">Owner</option>
+                <option value="Condo Bro">Condo Bro</option>
+              </select>
+            </div>
+
+            <div class="admin-form-row">
+              <label>Security Question 1<span class="required">*</span></label>
+              <select id="admin-securityQuestion1">
+                <option value="1">What was the name of your first pet?</option>
+                <option value="2">What street did you grow up on?</option>
+                <option value="3">What was your childhood nickname?</option>
+                <option value="4">What was your first concert?</option>
+                <option value="5">What was the first movie you saw in a theatre?</option>
+                <option value="6">What was the first car you rode in?</option>
+              </select>
+            </div>
+
+            <div class="admin-form-row">
+              <label>Answer to Security Question 1<span class="required">*</span></label>
+              <input type="text" id="admin-security-answer-1" maxlength="100" required>
+            </div>
+
+            <div class="admin-form-row">
+              <label>Security Question 2<span class="required">*</span></label>
+              <select id="admin-securityQuestion2">
+                <option value="1">What was the name of your first pet?</option>
+                <option value="2">What street did you grow up on?</option>
+                <option value="3">What was your childhood nickname?</option>
+                <option value="4">What was your first concert?</option>
+                <option value="5">What was the first movie you saw in a theatre?</option>
+                <option value="6">What was the first car you rode in?</option>
+              </select>
+            </div>
+
+            <div class="admin-form-row">
+              <label>Answer to Security Question 2<span class="required">*</span></label>
+              <input type="text" id="admin-security-answer-2" maxlength="100" required>
+            </div>
+
+            <div class="admin-form-actions">
+              <button type="submit" class="admin-primary-btn">Create Account</button>
+            </div>
+          </form>
+
+          <div id="admin-create-user-message" class="admin-feedback"></div>
+        </div>
+      </div>
+
+      {{!-- TAB 2: ROLES & PERMISSIONS --}}
+      <div id="tab-roles" class="admin-tab-panel">
+        <div class="admin-card">
+          <h2>Roles &amp; Permissions</h2>
+          <p class="admin-card-subtitle">
+            View all users, filter them by role, and update their roles in real time.
+          </p>
+
+          <div class="admin-filter-row">
+            <div class="admin-filter-group">
+              <label>Role Filter</label>
+              <select id="admin-users-role-filter">
+                <option value="">All</option>
+                <option value="Admin">Admin</option>
+                <option value="Owner">Owner</option>
+                <option value="Condo Bro">Condo Bro</option>
+              </select>
+            </div>
+            <div class="admin-filter-group">
+              <label>Search</label>
+              <input type="text" id="admin-users-search" placeholder="Username or email">
+            </div>
+            <div class="admin-filter-group">
+              <button id="admin-users-refresh" class="admin-secondary-btn">Apply Filters</button>
+            </div>
+          </div>
+
+          <div class="admin-table-wrapper">
+            <table class="admin-table" id="admin-users-table">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Role</th>
+                  <th>Created</th>
+                  <th style="width: 180px;">Change Role</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{!-- Filled by JS --}}
+              </tbody>
+            </table>
+          </div>
+
+          <div id="admin-users-message" class="admin-feedback"></div>
+        </div>
+      </div>
+
+      {{!-- TAB 3: AUDIT LOGS --}}
+      <div id="tab-logs" class="admin-tab-panel">
+        <div class="admin-card">
+          <h2>Security Logs</h2>
+          <p class="admin-card-subtitle">
+            View validation failures, access control issues, lockouts, and admin actions.
+          </p>
+
+          <div class="admin-filter-row">
+            <div class="admin-filter-group">
+              <label>Event Type</label>
+              <select id="log-eventType">
+                <option value="">All</option>
+                <option value="VALIDATION_FAILURE">Validation Failure</option>
+                <option value="ACCESS_CONTROL_FAILURE">Access Control Failure</option>
+                <option value="AUTH_LOCKOUT">Auth Lockout</option>
+                <option value="ADMIN_ACTION">Admin Action</option>
+              </select>
+            </div>
+            <div class="admin-filter-group">
+              <label>Username</label>
+              <input type="text" id="log-username" placeholder="e.g. niccolo">
+            </div>
+            <div class="admin-filter-group">
+              <label>Route</label>
+              <input type="text" id="log-route" placeholder="/login, /edit-profile">
+            </div>
+          </div>
+
+          <div class="admin-filter-row">
+            <div class="admin-filter-group">
+              <label>From</label>
+              <input type="date" id="log-fromDate">
+            </div>
+            <div class="admin-filter-group">
+              <label>To</label>
+              <input type="date" id="log-toDate">
+            </div>
+            <div class="admin-filter-group">
+              <button id="log-security-refresh" class="admin-secondary-btn">Filter Security Logs</button>
+            </div>
+          </div>
+
+          <div class="admin-table-wrapper">
+            <table class="admin-table" id="admin-security-logs-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Event Type</th>
+                  <th>User</th>
+                  <th>Route</th>
+                  <th>Message</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{!-- Filled by JS --}}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="admin-card" style="margin-top: 24px;">
+          <h2>Authentication Logs</h2>
+          <p class="admin-card-subtitle">
+            View recent login attempts (success and failed).
+          </p>
+
+          <div class="admin-filter-row">
+            <div class="admin-filter-group">
+              <label>Username</label>
+              <input type="text" id="authlog-username" placeholder="e.g. niccolo">
+            </div>
+            <div class="admin-filter-group">
+              <label>Result</label>
+              <select id="authlog-success">
+                <option value="">All</option>
+                <option value="true">Success</option>
+                <option value="false">Failed</option>
+              </select>
+            </div>
+            <div class="admin-filter-group">
+              <button id="authlog-refresh" class="admin-secondary-btn">Filter Auth Logs</button>
+            </div>
+          </div>
+
+          <div class="admin-table-wrapper">
+            <table class="admin-table" id="admin-auth-logs-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>User</th>
+                  <th>Role</th>
+                  <th>Success</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{!-- Filled by JS --}}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div> <!-- /admin-tab-panels -->
+  </div>
+</div>
+
+{{!-- Styles scoped to admin page --}}
+<style>
+  .admin-page {
+    background: #f5f7fb;
+    min-height: calc(100vh - 80px);
+    padding: 100px 16px 40px;
+  }
+
+  .admin-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 24px 28px 32px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+  }
+
+  .admin-title {
+    font-size: 28px;
+    margin-bottom: 4px;
+  }
+
+  .admin-subtitle {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 20px;
+  }
+
+  .admin-stats-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .admin-stat-card {
+    flex: 1 1 150px;
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 12px 14px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .admin-stat-label {
+    font-size: 12px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+
+  .admin-stat-value {
+    font-size: 20px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .admin-tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 16px;
+    margin-top: 12px;
+  }
+
+  .admin-tab {
+    border: none;
+    background: transparent;
+    padding: 8px 14px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 10px 10px 0 0;
+    color: #64748b;
+  }
+
+  .admin-tab.active {
+    background: #0f172a;
+    color: #fff;
+  }
+
+  .admin-tab-panel {
+    display: none;
+  }
+
+  .admin-tab-panel.active {
+    display: block;
+  }
+
+  .admin-card {
+    background: #f9fafb;
+    border-radius: 10px;
+    padding: 18px 18px 20px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .admin-card + .admin-card {
+    margin-top: 18px;
+  }
+
+  .admin-card h2 {
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+
+  .admin-card-subtitle {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 12px;
+  }
+
+  .admin-form {
+    max-width: 540px;
+  }
+
+  .admin-form-row {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+  }
+
+  .admin-form-row label {
+    font-size: 13px;
+    margin-bottom: 4px;
+    color: #374151;
+  }
+
+  .admin-form-row input,
+  .admin-form-row select,
+  .admin-form-row textarea {
+    padding: 6px 8px;
+    font-size: 13px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+  }
+
+  .admin-form-actions {
+    margin-top: 12px;
+  }
+
+  .admin-primary-btn,
+  .admin-secondary-btn {
+    border-radius: 999px;
+    border: none;
+    padding: 7px 14px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .admin-primary-btn {
+    background: #0f172a;
+    color: #fff;
+  }
+
+  .admin-secondary-btn {
+    background: #e5e7eb;
+    color: #111827;
+  }
+
+  .admin-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .admin-filter-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 150px;
+  }
+
+  .admin-filter-group label {
+    font-size: 12px;
+    margin-bottom: 3px;
+    color: #4b5563;
+  }
+
+  .admin-filter-group input,
+  .admin-filter-group select {
+    padding: 6px 8px;
+    font-size: 13px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+  }
+
+  .admin-table-wrapper {
+    margin-top: 10px;
+    overflow-x: auto;
+  }
+
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  .admin-table th {
+    background: #f3f4f6;
+    font-weight: 500;
+    font-size: 12px;
+    color: #4b5563;
+  }
+
+  .admin-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .admin-feedback {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #374151;
+  }
+
+  .admin-feedback.error {
+    color: #b91c1c;
+  }
+
+  .admin-feedback.success {
+    color: #166534;
+  }
+
+  .required {
+    color: #b91c1c;
+    margin-left: 3px;
+  }
+
+  @media (max-width: 768px) {
+    .admin-container {
+      padding: 18px 14px 24px;
+    }
+    .admin-stats-row {
+      flex-direction: column;
+    }
+  }
+</style>
+
+{{!-- Page-specific JS --}}
+<script>
+  $(function() {
+    // Tabs
+    $('.admin-tab').on('click', function() {
+      var target = $(this).data('tab');
+      $('.admin-tab').removeClass('active');
+      $(this).addClass('active');
+      $('.admin-tab-panel').removeClass('active');
+      $('#' + target).addClass('active');
+    });
+
+    // --- USER CREATION (Admin / Owner / Condo Bro) ---
+    $('#admin-create-user-form').on('submit', function(e) {
+      e.preventDefault();
+
+      const username = $('#admin-create-username').val().trim();
+      const password = $('#admin-create-password').val();
+      const confirmPassword = $('#admin-create-confirm-password').val();
+      const role = $('#admin-create-role').val();
+      const securityQn1 = $('#admin-securityQuestion1').val();
+      const securityQn2 = $('#admin-securityQuestion2').val();
+      const securityAnswer1 = $('#admin-security-answer-1').val().trim();
+      const securityAnswer2 = $('#admin-security-answer-2').val().trim();
+
+      const $msg = $('#admin-create-user-message');
+      $msg.removeClass('error success').text('');
+
+      if (!username || !password || !confirmPassword) {
+        $msg.addClass('error').text('Required fields must not be empty.');
+        return;
+      }
+      if (password !== confirmPassword) {
+        $msg.addClass('error').text('Passwords do not match.');
+        return;
+      }
+      if (securityAnswer1.length > 100 || securityAnswer2.length > 100) {
+        $msg.addClass('error').text('Answers to security questions must be less than 100 characters.');
+        return;
+      }
+
+      const payload = {
+        username: username,
+        password: password,
+        role: role,
+        // default avatar and bio (you can tweak this)
+        picture: 'images/gamer.png',
+        bio: '',
+        securityQn1: securityQn1,
+        securityQn2: securityQn2,
+        securityAnswer1: securityAnswer1,
+        securityAnswer2: securityAnswer2
+      };
+
+      $.ajax({
+        url: '/admin/users',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(payload),
+        success: function(res) {
+          $msg.addClass('success').text(res.message || 'User created successfully.');
+          $('#admin-create-user-form')[0].reset();
+          $('#admin-create-role').val('Admin');
+          loadAdminUsers(); // refresh list in Roles tab
+        },
+        error: function(xhr) {
+          const message = xhr.responseJSON && xhr.responseJSON.message
+            ? xhr.responseJSON.message
+            : 'Error creating user.';
+          $msg.addClass('error').text(message);
+        }
+      });
+    });
+
+    // --- ROLES & PERMISSIONS ---
+    function loadAdminUsers() {
+      const role = $('#admin-users-role-filter').val();
+      const search = $('#admin-users-search').val().trim();
+
+      const params = [];
+      if (role) params.push('role=' + encodeURIComponent(role));
+      if (search) params.push('search=' + encodeURIComponent(search));
+
+      const url = '/admin/users' + (params.length ? ('?' + params.join('&')) : '');
+
+      $.get(url, function(res) {
+        const $tbody = $('#admin-users-table tbody');
+        $tbody.empty();
+
+        if (!res.users || res.users.length === 0) {
+          $tbody.append('<tr><td colspan="4">No users found.</td></tr>');
+          return;
+        }
+
+        res.users.forEach(function(u) {
+          const createdAt = u.createdAt ? new Date(u.createdAt).toLocaleString() : '';
+          const $row = $('<tr></tr>').attr('data-user-id', u._id);
+
+          const $usernameCell = $('<td></td>').text(u.user || '');
+          const $roleCell = $('<td></td>').text(u.role || 'Condo Bro');
+          const $createdCell = $('<td></td>').text(createdAt);
+
+          const $actionCell = $('<td></td>');
+          const $select = $('<select class="admin-role-select"></select>');
+          ['Admin', 'Owner', 'Condo Bro'].forEach(function(roleOpt) {
+            const $opt = $('<option></option>')
+              .val(roleOpt)
+              .text(roleOpt);
+            if (u.role === roleOpt) $opt.attr('selected', 'selected');
+            $select.append($opt);
+          });
+          const $btn = $('<button type="button" class="admin-secondary-btn admin-update-role-btn">Save</button>');
+
+          $actionCell.append($select).append(' ').append($btn);
+
+          $row.append($usernameCell, $roleCell, $createdCell, $actionCell);
+          $tbody.append($row);
+        });
+      }).fail(function() {
+        $('#admin-users-message')
+          .addClass('error')
+          .text('Error fetching users.');
+      });
+    }
+
+    $('#admin-users-refresh').on('click', function() {
+      $('#admin-users-message').removeClass('error success').text('');
+      loadAdminUsers();
+    });
+
+    // Handle role update click
+    $('#admin-users-table').on('click', '.admin-update-role-btn', function() {
+      const $row = $(this).closest('tr');
+      const userId = $row.data('user-id');
+      const newRole = $row.find('.admin-role-select').val();
+
+      const $msg = $('#admin-users-message');
+      $msg.removeClass('error success').text('');
+
+      if (!userId) {
+        $msg.addClass('error').text('Invalid user ID.');
+        return;
+      }
+
+      $.ajax({
+        url: '/admin/users/' + encodeURIComponent(userId) + '/role',
+        method: 'PATCH',
+        contentType: 'application/json',
+        data: JSON.stringify({ newRole: newRole }),
+        success: function(res) {
+          $msg.addClass('success').text(res.message || 'Role updated successfully.');
+          loadAdminUsers();
+        },
+        error: function(xhr) {
+          const message = xhr.responseJSON && xhr.responseJSON.message
+            ? xhr.responseJSON.message
+            : 'Error updating role.';
+          $msg.addClass('error').text(message);
+        }
+      });
+    });
+
+    // --- AUDIT LOGS: SECURITY ---
+    function loadSecurityLogs() {
+      const eventType = $('#log-eventType').val();
+      const username = $('#log-username').val().trim();
+      const route = $('#log-route').val().trim();
+      const fromDate = $('#log-fromDate').val();
+      const toDate = $('#log-toDate').val();
+
+      const params = [];
+      if (eventType) params.push('eventType=' + encodeURIComponent(eventType));
+      if (username) params.push('username=' + encodeURIComponent(username));
+      if (route) params.push('route=' + encodeURIComponent(route));
+      if (fromDate) params.push('fromDate=' + encodeURIComponent(fromDate));
+      if (toDate) params.push('toDate=' + encodeURIComponent(toDate));
+
+      const url = '/admin/logs/security' + (params.length ? ('?' + params.join('&')) : '');
+
+      $.get(url, function(res) {
+        const $tbody = $('#admin-security-logs-table tbody');
+        $tbody.empty();
+
+        if (!res.logs || res.logs.length === 0) {
+          $tbody.append('<tr><td colspan="5">No logs found.</td></tr>');
+          return;
+        }
+
+        res.logs.forEach(function(log) {
+          const time = log.createdAt ? new Date(log.createdAt).toLocaleString() : '';
+          const userLabel = log.username || (log.userId && log.userId.user) || '';
+
+          const $row = $('<tr></tr>');
+          $row.append(
+            $('<td></td>').text(time),
+            $('<td></td>').text(log.eventType || ''),
+            $('<td></td>').text(userLabel),
+            $('<td></td>').text(log.route || ''),
+            $('<td></td>').text(log.message || '')
+          );
+          $tbody.append($row);
+        });
+      }).fail(function() {
+        const $tbody = $('#admin-security-logs-table tbody');
+        $tbody.empty().append('<tr><td colspan="5">Error loading security logs.</td></tr>');
+      });
+    }
+
+    $('#log-security-refresh').on('click', function() {
+      loadSecurityLogs();
+    });
+
+    // --- AUDIT LOGS: AUTH ---
+    function loadAuthLogs() {
+      const username = $('#authlog-username').val().trim();
+      const success = $('#authlog-success').val();
+
+      const params = [];
+      if (username) params.push('username=' + encodeURIComponent(username));
+      if (success) params.push('success=' + encodeURIComponent(success));
+
+      const url = '/admin/logs/auth' + (params.length ? ('?' + params.join('&')) : '');
+
+      $.get(url, function(res) {
+        const $tbody = $('#admin-auth-logs-table tbody');
+        $tbody.empty();
+
+        if (!res.attempts || res.attempts.length === 0) {
+          $tbody.append('<tr><td colspan="4">No authentication logs found.</td></tr>');
+          return;
+        }
+
+        res.attempts.forEach(function(attempt) {
+          const time = attempt.loginAt ? new Date(attempt.loginAt).toLocaleString() : '';
+          const user = attempt.userId && attempt.userId.user ? attempt.userId.user : '';
+          const role = attempt.userId && attempt.userId.role ? attempt.userId.role : '';
+          const successLabel = attempt.success ? 'Success' : 'Failed';
+
+          const $row = $('<tr></tr>');
+          $row.append(
+            $('<td></td>').text(time),
+            $('<td></td>').text(user),
+            $('<td></td>').text(role),
+            $('<td></td>').text(successLabel)
+          );
+          $tbody.append($row);
+        });
+      }).fail(function() {
+        const $tbody = $('#admin-auth-logs-table tbody');
+        $tbody.empty().append('<tr><td colspan="4">Error loading authentication logs.</td></tr>');
+      });
+    }
+
+    $('#authlog-refresh').on('click', function() {
+      loadAuthLogs();
+    });
+
+    // Initial loads
+    loadAdminUsers();
+    loadSecurityLogs();
+    loadAuthLogs();
+  });
+</script>

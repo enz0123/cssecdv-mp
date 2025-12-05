@@ -3,7 +3,12 @@ const mongoose = require('mongoose');
 const securityLogSchema = new mongoose.Schema({
     eventType: {
         type: String,
-        enum: ['VALIDATION_FAILURE', 'ACCESS_CONTROL_FAILURE', 'AUTH_LOCKOUT'],
+        enum: [
+            'VALIDATION_FAILURE',
+            'ACCESS_CONTROL_FAILURE',
+            'AUTH_LOCKOUT',
+            'ADMIN_ACTION'
+        ],
         required: true
     },
     userId: {
@@ -12,7 +17,8 @@ const securityLogSchema = new mongoose.Schema({
         default: null
     },
     username: {
-        type: String
+        type: String,
+        default: null
     },
     route: {
         type: String
@@ -24,6 +30,10 @@ const securityLogSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    metadata: {
+        type: Object,
+        default: {}
+    },
     createdAt: {
         type: Date,
         default: Date.now
@@ -31,4 +41,5 @@ const securityLogSchema = new mongoose.Schema({
 });
 
 const securityLogModel = mongoose.model('security log', securityLogSchema, 'auth_security logs');
+
 module.exports = securityLogModel;

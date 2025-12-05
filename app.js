@@ -79,9 +79,9 @@ server.use(express.static('public'));
 const mongoose = require('mongoose');
 mongoose.connect(mongoURI);
 
-const controllers = ['routeUser', 'routeCondo', 'routeReview'];
+const controllers = ['routeUser', 'routeCondo', 'routeReview', 'routeAdmin'];
 
-for(let i = 0; i < controllers.length; i++){
+for (let i = 0; i < controllers.length; i++) {
     const ctrl = require('./controllers/' + controllers[i]); 
     ctrl.add(server);
 }

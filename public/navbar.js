@@ -4,34 +4,43 @@ $(document).ready(function(){
         let logUsername = $('#log-username').val()
 
         if(logUsername.length < 1){
-            alert('Please input a username to continue.')
-            return
+            alert('Please input a username to continue.');
+            return;
         }
 
         if(logUsername.length > 20){
-            alert('Username must be less than 20 characters before continuing.')
-            return
+            alert('Username must be less than 20 characters before continuing.');
+            return;
         }
 
-        window.location.href = '/forgot-password?username=' + encodeURIComponent(logUsername)
-        
+        window.location.href = '/forgot-password?username=' + encodeURIComponent(logUsername);
     });
 
-
+    // Check login status on load
     $.get(
         'loggedInStatus',
         function(data, status){
             if(status === 'success'){
                 $("#login").hide();
+
                 if(data.isAuthenticated){
                     $(".nav-logged-out").hide();
                     $(".nav-logged-in").show();
+
                     $("#username-display").text(data.username);
                     $("#profile-link").attr('href', 'profile/' + data.username);
                     $('#profile-link img').attr('src', data.picture);
+
                     showLogInView();
                     $("#login").hide();
                     updateDropdownText(data.username); // changes the dropdown
+
+                    // Show admin dashboard links only for Admin role
+                    if (data.role === 'Admin') {
+                        $("#admin-dashboard-dropdown").show();
+                    } else {
+                        $("#admin-dashboard-dropdown").hide();
+                    }
 
                     if(typeof checkUser === 'function'){
                         checkUser();
@@ -41,7 +50,10 @@ $(document).ready(function(){
                 }
                 else{
                     $(".nav-logged-in").hide();
+                    $(".nav-logged-out").show();
                     $("#logout-button").hide();
+
+                    $("#admin-dashboard-dropdown").hide();
 
                     if(typeof checkUser === 'function'){
                         checkUser();
@@ -53,37 +65,38 @@ $(document).ready(function(){
         }
     );
 
+    // Logout (server-side)
     $("#logout-button").click(function(){
         $.post(
-           'logout',
+            'logout',
             {},
             function(data, status){
                 if(status === 'success') {
                     $(".nav-logged-in").hide();
                     $("#logout-button").hide();
+                    // admin links will be hidden on reload by loggedInStatus
                     window.location.href="/";
                 }
                 else{
-                    alert('clicked');
+                    alert('Error logging out.');
                 }
             }
         );
-        
     });
 
     // Account creation form submission
     $("#create-account-form").submit(function(event) {
-        // Prevent default form submission behavior
         event.preventDefault();
         
-        // Validate the form inputs
         if (!checkCreateAccountForm()) {
             return;
         }
 
-        var iconPath = $('input[name="avatar"]:checked').closest('.select-avatar').find('img.avatar').attr('src');
+        var iconPath = $('input[name="avatar"]:checked')
+            .closest('.select-avatar')
+            .find('img.avatar')
+            .attr('src');
 
-        // Get form data
         const formData = {
             username: $("#create-account-form input[name='username']").val(),
             password: $("#create-account-form input[name='password']").val(),
@@ -97,63 +110,51 @@ $(document).ready(function(){
 
         $("#create-account").hide();
 
-        // Send POST request to server
         $.post('/create-account', formData)
             .done(function(response) {
-                // Handle success response
-                alert(response.message); // Display success message
+                alert(response.message);
             })
             .fail(function(xhr, status, error) {
-                // Handle failure response
                 console.error('Error creating account:', error);
-                alert(xhr.responseJSON.message); // Display error message
+                alert(xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Error creating account.');
             });
     });
 
     // Login form submission
     $('#login-form').submit(function(event) {
-        event.preventDefault(); // Prevent default form submission
+        event.preventDefault();
 
-        // Validate the form inputs
         if (!checkLoginForm()) {
             return;
         }
 
         const username = $("#login-form input[name='username']").val();
         const password = $("#login-form input[name='password']").val();
-        const rememberMe = $("#login-form input[type='checkbox']").prop('checked'); // Get the state of the checkbox
+        const rememberMe = $("#login-form input[type='checkbox']").prop('checked');
 
         $("#login").hide();
 
-        // Send login request to server
         $.post('/login', { username, password, rememberMe })
             .done(function(response) {
-                // Successful login
                 console.log(response.message);
 
-                // Set the text of the <div> element to the entered username
                 $("#username-display").text(username);
                 $("#profile-link").attr('href', 'profile/' + username);
                 $('#profile-link img').attr('src', response.picture);
 
                 showLogInView();
                 $("#login").hide();
-                updateDropdownText(username); // changes the dropdown
+                updateDropdownText(username);
 
-                console.log(response.message)
-                
                 alert("Welcome to The Condo Bro, " + username + " " + response.message);
 
                 window.location.href="/";
             })
             .fail(function(xhr, status, error) {
-                // Login failed
                 console.error('Login failed:', error);
-                alert(xhr.responseJSON.message);
+                alert(xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Login failed.');
             });
     });
-
-
 
     $("#create-account").hide();
 
@@ -168,14 +169,13 @@ $(document).ready(function(){
 
     $("#show-login").click(function(){
         $("#login").slideDown();
-        $(".nav-dropdown").hide(); // Hides dropdown after click
+        $(".nav-dropdown").hide();
     });
 
     $("#close").click(function(){
         $("#login").hide();
     });
     
-
     $("#close-create").click(function(){
         $("#create-account").hide();
     });
@@ -190,7 +190,7 @@ $(document).ready(function(){
             window.location.href = "/profile/" + $("#username-display").text();
         } else {
             $("#login").slideDown();
-            $(".nav-dropdown").hide(); // Hides dropdown after clicks
+            $(".nav-dropdown").hide();
         }
     });
 
@@ -200,52 +200,43 @@ $(document).ready(function(){
             window.location.href = "/edit-profile";
         } else {
             $("#create-account").show();
-            $(".nav-dropdown").hide(); // Hides dropdown after click
+            $(".nav-dropdown").hide();
         }
     });
 
-    $("#logout-button").click(function(){
-        // window.location.href="index.html";
-        location.reload();
-        $(".nav-dropdown").hide(); // Hides dropdown after click
-    });
-
+    // View condos
     $("#view-condo").click(function(){
-        // Check if the current page is in index page
         if (window.location.pathname === "/") {
-            // Smooth scrolling behavior
             window.scrollBy({
                 top: 650,
                 left: 0,
                 behavior: 'smooth'
             });
         } else {
-            // Redirect to index page
             window.location.href = "/";       
         }
     });
 
+    // Admin dashboard in dropdown
+    $("#admin-dashboard-dropdown").click(function(){
+        window.location.href = "/admin";
+    });
 });
 
 function updateDropdownText(username) { 
-    $("#login-button").text(username !== '' ? "View Profile" : 'Login'); // Change login to username if not empty, otherwise revert to Login
-    $("#signup-button").text(username !== '' ? 'Edit Profile' : 'Signup'); // Change signup to View Profile if username is not empty, otherwise revert to Signup
-    $("#logout-button").text(username !== '' ? 'Log Out' : 'Log Out');
+    $("#login-button").text(username !== '' ? "View Profile" : 'Login');
+    $("#signup-button").text(username !== '' ? 'Edit Profile' : 'Signup');
+    $("#logout-button").text('Log Out');
     $("#logout-button").show();
 }
-
 
 function showLogInView(){
     $(".nav-logged-out").hide();
     $(".nav-logged-in").show();
 }
 
-function checkWhiteSpace(text){login
-    if(text.indexOf(' ') !== -1){
-        return true;
-    }
-
-    return false;
+function checkWhiteSpace(text){
+    return text.indexOf(' ') !== -1;
 }
 
 function checkLoginForm(){
@@ -273,7 +264,6 @@ function checkLoginForm(){
     }
     
     return true;
-
 }
 
 function checkCreateAccountForm(){
@@ -282,11 +272,11 @@ function checkCreateAccountForm(){
     let confirmPassword = document.forms["create-account-form"]["confirm-password"].value;
     let description = document.forms["create-account-form"]["description"].value;
 
-    let securityQn1 = $("#security-answer-1").val()
-    let securityQn2 = $("#security-answer-2").val()
+    let securityQn1 = $("#security-answer-1").val();
+    let securityQn2 = $("#security-answer-2").val();
 
     if(securityQn1.length > 100 || securityQn2.length > 100){
-        alert("Answer to Security Questions must be less than 100 characters.")
+        alert("Answer to Security Questions must be less than 100 characters.");
         return false;
     }
 
@@ -310,17 +300,15 @@ function checkCreateAccountForm(){
         return false;
     }
 
-
-
-
-
     if(checkWhiteSpace(username) || checkWhiteSpace(password) || checkWhiteSpace(confirmPassword)){
         alert("Username and password must not contain white space.");
         return false;
     }
 
-    //Ensure password is at least 8 characters, 1 uppercase, 1 lowercase, 1 number, 1 special character
-    if((password).length < 9 || !(/[a-z]/.test(password)) || !(/[A-Z]/.test(password)) || !(/[0-9]/.test(password)) || !(/[\W_]/.test(password))){
+    // Password complexity
+    if((password).length < 9 || !(/[a-z]/.test(password)) ||
+       !(/[A-Z]/.test(password)) || !(/[0-9]/.test(password)) ||
+       !(/[\W_]/.test(password))){
         alert("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
         return false;
     }
