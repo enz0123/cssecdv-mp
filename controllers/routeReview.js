@@ -78,6 +78,11 @@ function add(server) {
     server.post('/search-review', async function (req, resp, next) {
         const text = req.body.text;
         const condoId = req.body.condoId;
+
+        if (text && text.length > 500) {
+            return resp.status(400).send({ message: 'Search text too long! (max 500 characters)' });
+        }
+
         let listOfReviews = [];
 
         const searchQuery = { condoId: condoId };
@@ -107,6 +112,16 @@ function add(server) {
     server.patch('/create-review', async (req, resp, next) => {
         const { condoId, title, content, rating, image, date } = req.body;
 
+        if (!title || !content || !rating || rating === 0) {
+            return resp.status(400).send({ message: 'Please fill in the title, content, and select a star rating.' });
+        }
+        if (title.length > 100) {
+            return resp.status(400).send({ message: 'Title too long! (max 100 characters)' });
+        }
+        if (content.length > 500) {
+            return resp.status(400).send({ message: 'Content too long! (max 500 characters)' });
+        }
+
         try {
             await userFunctions.createReview(condoId, title, content, rating, image, date, req.session.username);
             await userFunctions.updateAverageRating(condoId);
@@ -129,8 +144,16 @@ function add(server) {
     // create comment POST
     server.post('/create-comment', async (req, resp, next) => {
         try {
+            const content = req.body.content;
+            if (!content) {
+                return resp.status(400).send({ message: 'Please put a comment first.' });
+            }
+            if (content.length > 500) {
+                return resp.status(400).send({ message: 'Comment too long! (max 500 characters)' });
+            }
+
             const [createSuccess, createStatus, createMessage] =
-                await userFunctions.createComment(req.session._id, req.body.content, req.body.date, req.body.reviewId);
+                await userFunctions.createComment(req.session._id, content, req.body.date, req.body.reviewId);
 
             resp.status(createStatus).send({ success: createSuccess, message: createMessage, user: req.session });
         } catch (err) {
@@ -186,6 +209,18 @@ function add(server) {
     server.patch('/update-review/:id', async (req, resp, next) => {
         try {
             const reviewId = req.params.id;
+            const { title, content, rating } = req.body;
+
+            if (!title || !content || !rating || rating === 0) {
+                return resp.status(400).send({ message: 'Please fill in the title, content, and select a star rating.' });
+            }
+            if (title.length > 100) {
+                return resp.status(400).send({ message: 'Title too long! (max 100 characters)' });
+            }
+            if (content.length > 500) {
+                return resp.status(400).send({ message: 'Content too long! (max 500 characters)' });
+            }
+
             const result = await reviewModel.findByIdAndUpdate(reviewId, req.body);
             if (result && result.condoId) {
                 await userFunctions.updateAverageRating(result.condoId);
@@ -203,6 +238,13 @@ function add(server) {
             const commentId = req.params.id;
             const reviews = await reviewModel.find();
             const { content, date, isEdited } = req.body;
+
+            if (!content) {
+                return resp.status(400).send({ message: 'Please fill in the content.' });
+            }
+            if (content.length > 500) {
+                return resp.status(400).send({ message: 'Content too long! (max 500 characters)' });
+            }
 
             let updated = false;
 

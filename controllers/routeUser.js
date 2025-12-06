@@ -83,7 +83,7 @@ function add(server) {
 
     // Login POST 
     server.post('/login', async (req, res) => {
-        const { username, password, rememberMe } = req.body;   
+        const { username, password, rememberMe } = req.body;
 
         let findStatus, findMessage, user;
 
@@ -99,7 +99,7 @@ function add(server) {
         }
 
         [findStatus, findMessage, user] = await userFunctions.findUser(username, password);
-        
+
         if (user) {
             const isBlocked = await userFunctions.isUserBlocked(user._id);
             if (isBlocked.blocked) {
@@ -198,7 +198,12 @@ function add(server) {
                 'POST',
                 'New password does not meet minimum length requirement.'
             );
-            return resp.status(400).json({ message: 'Error. Invalid details.' });
+            return resp.status(400).json({ message: 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.' });
+        }
+
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+        if (!passwordRegex.test(newPassword)) {
+            return resp.status(400).json({ message: 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.' });
         }
 
         [changeStatus, changeMessage, user] =
@@ -219,7 +224,7 @@ function add(server) {
 
         [changeStatus, changeMessage, user] =
             await userFunctions.changePassword(username, newPassword);
-        
+
         resp.status(changeStatus).json({ message: changeMessage });
     });
 
@@ -311,7 +316,7 @@ function add(server) {
     });
 
     // Edit profile page
-    server.get('/edit-profile/', async function(req, resp) {
+    server.get('/edit-profile/', async function (req, resp) {
         if (req.session && req.session.isAuthenticated) {
             return resp.render('editprofile', {
                 layout: 'index',
@@ -329,11 +334,11 @@ function add(server) {
             );
 
             // Fallback: show home page
-            condoModel.find().lean().then(function(condos){
+            condoModel.find().lean().then(function (condos) {
                 for (const condo of condos) {
                     condo.description = condo.description.slice(0, 150) + "...";
                 }
-                
+
                 resp.render('home', {
                     layout: 'index',
                     title: 'Home Page',
@@ -347,7 +352,7 @@ function add(server) {
 
     // Edit profile submit
     server.patch('/edit-profile-submit', async (req, resp) => {
-    // Access control: must be logged in
+        // Access control: must be logged in
         if (!req.session || !req.session.isAuthenticated) {
             await userFunctions.logAccessControlFailure(
                 null,
@@ -360,6 +365,27 @@ function add(server) {
         }
 
         const newData = userFunctions.filterEditData(req.body);
+
+        if (newData.name) {
+            if (newData.name.includes(' ')) {
+                return resp.status(400).json({ message: "Username can't have any space" });
+            }
+            if (newData.name.length > 20) {
+                return resp.status(400).json({ message: 'Name too long! (max 20 characters)' });
+            }
+        }
+        if (newData.bio && newData.bio.length > 500) {
+            return resp.status(400).json({ message: 'Bio too long! (max 500 characters)' });
+        }
+        if (newData.education && newData.education.length > 100) {
+            return resp.status(400).json({ message: 'Education too long! (max 100 characters)' });
+        }
+        if (newData.city && newData.city.length > 100) {
+            return resp.status(400).json({ message: 'City too long! (max 100 characters)' });
+        }
+        if (newData.email && newData.email.length > 100) {
+            return resp.status(400).json({ message: 'Email too long! (max 100 characters)' });
+        }
 
         userModel.updateOne({ "user": req.session.username }, { $set: newData })
             .then(result => {
