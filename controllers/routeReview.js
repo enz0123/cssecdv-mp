@@ -112,8 +112,8 @@ function add(server) {
     server.patch('/create-review', async (req, resp, next) => {
         const { condoId, title, content, rating, image, date } = req.body;
 
-        if (!title || !content || !rating || rating === 0) {
-            return resp.status(400).send({ message: 'Please fill in the title, content, and select a star rating.' });
+        if (!title || !content || !rating || rating === 0 || rating > 5) {
+            return resp.status(400).send({ message: 'Please fill in the title, content, and select a valid star rating (1-5).' });
         }
         if (title.length > 100) {
             return resp.status(400).send({ message: 'Title too long! (max 100 characters)' });
@@ -211,8 +211,8 @@ function add(server) {
             const reviewId = req.params.id;
             const { title, content, rating } = req.body;
 
-            if (!title || !content || !rating || rating === 0) {
-                return resp.status(400).send({ message: 'Please fill in the title, content, and select a star rating.' });
+            if (!title || !content || !rating || rating === 0 || rating > 5) {
+                return resp.status(400).send({ message: 'Please fill in the title, content, and select a valid star rating (1-5).' });
             }
             if (title.length > 100) {
                 return resp.status(400).send({ message: 'Title too long! (max 100 characters)' });
