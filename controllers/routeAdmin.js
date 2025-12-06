@@ -4,35 +4,16 @@ const userModel = require('../models/User');
 const loginAttemptModel = require('../models/LoginAttempt');
 const securityLogModel = require('../models/SecurityLog');
 const userFunctions = require('../models/userFunctions');
+const auth = require('../middleware/auth');
 
 const ALLOWED_ROLES = ['Admin', 'Owner', 'Condo Bro'];
 
 // Middleware: only allow Admins
-async function ensureAdmin(req, res, next) {
-    if (!req.session || !req.session.isAuthenticated || req.session.role !== 'Admin') {
-        // Log access control failure
-        if (userFunctions.logAccessControlFailure) {
-            await userFunctions.logAccessControlFailure(
-                req.session ? req.session._id : null,
-                req.session ? req.session.username : null,
-                req.originalUrl,
-                req.method,
-                'Non-admin user attempted to access admin route.'
-            );
-        }
-
-        return res.status(403).render('error', {
-            layout: 'index',
-            status: 403,
-            message: 'You are not authorized to access this page.'
-        });
-    }
-    next();
-}
+// Replaced by auth.isAuthorized(['Admin'])
 
 function add(server) {
     // 2.4.3: Admin dashboard main page (view only for Admin)
-    server.get('/admin', ensureAdmin, async (req, res, next) => {
+    server.get('/admin', auth.isAuthorized(['Admin']), async (req, res, next) => {
         try {
             const [totalUsers, adminCount, ownerCount] = await Promise.all([
                 userModel.countDocuments({}),
@@ -62,7 +43,7 @@ function add(server) {
 
     // --- USER MANAGEMENT ---
 
-    server.get('/admin/users', ensureAdmin, async (req, res, next) => {
+    server.get('/admin/users', auth.isAuthorized(['Admin']), async (req, res, next) => {
         try {
             const { role, search } = req.query;
             const query = {};
@@ -92,7 +73,7 @@ function add(server) {
         }
     });
 
-    server.post('/admin/users', ensureAdmin, async (req, res, next) => {
+    server.post('/admin/users', auth.isAuthorized(['Admin']), async (req, res, next) => {
         try {
             const {
                 username,
@@ -185,7 +166,7 @@ function add(server) {
         }
     });
 
-    server.patch('/admin/users/:id/role', ensureAdmin, async (req, res, next) => {
+    server.patch('/admin/users/:id/role', auth.isAuthorized(['Admin']), async (req, res, next) => {
         try {
             const targetUserId = req.params.id;
             const { newRole } = req.body;
@@ -252,7 +233,7 @@ function add(server) {
 
     // --- LOG VIEWING / AUDIT TRAILS ---
 
-    server.get('/admin/logs/security', ensureAdmin, async (req, res, next) => {
+    server.get('/admin/logs/security', auth.isAuthorized(['Admin']), async (req, res, next) => {
         try {
             const { eventType, username, route, fromDate, toDate } = req.query;
             const query = {};
@@ -291,7 +272,7 @@ function add(server) {
         }
     });
 
-    server.get('/admin/logs/auth', ensureAdmin, async (req, res, next) => {
+    server.get('/admin/logs/auth', auth.isAuthorized(['Admin']), async (req, res, next) => {
         try {
             const { username, success } = req.query;
             const query = {};
