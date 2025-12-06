@@ -17,7 +17,7 @@ $(document).ready(function() {
         newPassword = $('#new-password').val();
         confirmNewPassword = $('#confirm-new-password').val();
 
-        if((password).length < 9 || !(/[a-z]/.test(password)) || !(/[A-Z]/.test(password)) || !(/[0-9]/.test(password)) || !(/[\W_]/.test(password))){
+        if((newPassword).length < 9 || !(/[a-z]/.test(newPassword)) || !(/[A-Z]/.test(newPassword)) || !(/[0-9]/.test(newPassword)) || !(/[\W_]/.test(newPassword))){
             alert("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
             return false;
         }
