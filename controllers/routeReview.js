@@ -2,6 +2,7 @@ const userModel = require('../models/User');
 const reviewModel = require('../models/Review');
 const likeModel = require('../models/Like');
 const userFunctions = require('../models/userFunctions');
+const auth = require('../middleware/auth');
 const { ObjectId } = require('mongodb');
 
 // saving uploaded image
@@ -22,7 +23,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage }); // Store uploaded files in the 'uploads' directory
 
 function add(server) {
-    server.post('/delete-review', async function (req, resp, next) {
+    server.post('/delete-review', auth.isAuthenticated, async function (req, resp, next) {
         const condoId = req.body.condoId;
         const reviewId = req.body.reviewId;
 
@@ -109,7 +110,7 @@ function add(server) {
         }
     });
 
-    server.patch('/create-review', async (req, resp, next) => {
+    server.patch('/create-review', auth.isAuthenticated, async (req, resp, next) => {
         const { condoId, title, content, rating, image, date } = req.body;
 
         if (!title || !content || !rating || rating === 0 || rating > 5) {
@@ -142,7 +143,7 @@ function add(server) {
     });
 
     // create comment POST
-    server.post('/create-comment', async (req, resp, next) => {
+    server.post('/create-comment', auth.isAuthenticated, async (req, resp, next) => {
         try {
             const content = req.body.content;
             if (!content) {
@@ -163,7 +164,7 @@ function add(server) {
         }
     });
 
-    server.post('/upload-image', upload.single('image'), (req, res, next) => {
+    server.post('/upload-image', auth.isAuthenticated, upload.single('image'), (req, res, next) => {
         // Get the temporary file path of the uploaded image
         const tempFilePath = req.file && req.file.path;
 
@@ -206,7 +207,7 @@ function add(server) {
         }
     });
 
-    server.patch('/update-review/:id', async (req, resp, next) => {
+    server.patch('/update-review/:id', auth.isAuthenticated, async (req, resp, next) => {
         try {
             const reviewId = req.params.id;
             const { title, content, rating } = req.body;
@@ -233,7 +234,7 @@ function add(server) {
         }
     });
 
-    server.patch('/update-comment/:id', async (req, resp, next) => {
+    server.patch('/update-comment/:id', auth.isAuthenticated, async (req, resp, next) => {
         try {
             const commentId = req.params.id;
             const reviews = await reviewModel.find();
@@ -273,7 +274,7 @@ function add(server) {
         }
     });
 
-    server.post('/delete-comment', async (req, resp, next) => {
+    server.post('/delete-comment', auth.isAuthenticated, async (req, resp, next) => {
         try {
             const commentId = req.body.commentId;
             const reviews = await reviewModel.find();
@@ -302,7 +303,7 @@ function add(server) {
         }
     });
 
-    server.post('/like', async (req, resp, next) => {
+    server.post('/like', auth.isAuthenticated, async (req, resp, next) => {
         let { reviewId, isClicked, isLike } = req.body;
         const userId = req.session._id;
 
