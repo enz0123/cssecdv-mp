@@ -1,9 +1,11 @@
 const condoModel = require('../models/Condo');
 const reviewModel = require('../models/Review');
 const userFunctions = require('../models/userFunctions');
+const ownerCondoModel = require('../models/OwnerCondo');
+const auth = require('../middleware/auth');
 
 function add(server) {
-    server.post('/filter-condo', async function(req, resp) {
+    server.post('/filter-condo', async function (req, resp) {
         const rating = Number(req.body.rating);
         const listOfCondos = [];
 
@@ -83,16 +85,78 @@ function add(server) {
 
             const processedReviews = await userFunctions.processReviews(reviews, req.session._id);
 
+            // Check if current user is the owner of this condo
+            let isOwner = false;
+            if (req.session.role === 'Owner') {
+                const ownership = await ownerCondoModel.findOne({
+                    userId: req.session._id,
+                    condoId: condoId
+                });
+                if (ownership) {
+                    isOwner = true;
+                }
+            }
+
             resp.render('condo', {
                 layout: 'index',
                 title: formattedCondoId,
                 data: data,
                 reviews: processedReviews.reverse(),
-                isCondo: true
+                isCondo: true,
+                isOwner: isOwner
             });
         } catch (err) {
             // Handle errors
             console.error('Error fetching data from MongoDB', err);
+            err.status = 500;
+            next(err);
+        }
+    });
+
+    server.patch('/update-condo/:id', auth.isAuthenticated, async (req, resp, next) => {
+        try {
+            const condoId = req.params.id;
+            const { name, description } = req.body;
+
+            // Verify ownership
+            const ownership = await ownerCondoModel.findOne({
+                userId: req.session._id,
+                condoId: condoId
+            });
+
+            if (!ownership) {
+                return resp.status(403).json({ message: 'Unauthorized. You do not own this condo.' });
+            }
+
+            if (!name || !description) {
+                return resp.status(400).json({ message: 'Name and description are required.' });
+            }
+
+            if (name.length > 100) {
+                return resp.status(400).json({ message: 'Name cannot exceed 100 characters.' });
+            }
+
+            if (description.length > 1000) {
+                return resp.status(400).json({ message: 'Description cannot exceed 1000 characters.' });
+            }
+
+            const updatedCondo = await condoModel.findOneAndUpdate(
+                { id: condoId },
+                { name, description },
+                { new: true }
+            );
+
+            if (!updatedCondo) {
+                return resp.status(404).json({ message: 'Condo not found.' });
+            }
+
+            resp.json({
+                success: true,
+                message: 'Condo updated successfully.',
+                condo: updatedCondo
+            });
+        } catch (err) {
+            console.error('Error updating condo:', err);
             err.status = 500;
             next(err);
         }

@@ -1,26 +1,26 @@
 var ratingButtons;
-$(document).ready(function(){
+$(document).ready(function () {
 
 
     // create review form
-    $("#search-review").submit(function(event){
+    $("#search-review").submit(function (event) {
         event.preventDefault();
         var text = $("#search-review-input").val().toUpperCase();
         var condoId = window.location.pathname.split('/condo/')[1];
 
-        if(text.length > 500){
+        if (text.length > 500) {
             alert('Search text too long!');
             return;
         }
-        
+
         $.post(
             'search-review',
-            {text: text, condoId: condoId},
-            function(data, status){
-                if(status === 'success'){
+            { text: text, condoId: condoId },
+            function (data, status) {
+                if (status === 'success') {
                     $(".reviews-container").empty();
 
-                    data.reviews.forEach(function(review){
+                    data.reviews.forEach(function (review) {
                         // Create a new review element
                         var $review = $('<div>').attr('id', review._id).addClass('grid-item');
 
@@ -32,9 +32,9 @@ $(document).ready(function(){
                         $reviewHeader.append($reviewHeaderLeft);
 
                         // Create star rating
-                        var $reviewHeaderRight= $('<div>');
+                        var $reviewHeaderRight = $('<div>');
                         var $starRating = $('<div>').addClass('star-rating').attr('id', 'rating');
-                        review.rating.forEach(function(rating) {
+                        review.rating.forEach(function (rating) {
                             var $star = $('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="presentation"> <path d="M12 17.27l4.15 2.51c.76.46 1.69-.22 1.49-1.08l-1.1-4.72 3.67-3.18c.67-.58.31-1.68-.57-1.75l-4.83-.41-1.89-4.46c-.34-.81-1.5-.81-1.84 0L9.19 8.63l-4.83.41c-.88.07-1.24 1.17-.57 1.75l3.67 3.18-1.1 4.72c-.2.86.73 1.54 1.49 1.08l4.15-2.5z"></path></svg>');
                             if (rating) {
                                 $star.addClass('star-on');
@@ -80,7 +80,7 @@ $(document).ready(function(){
                         $commentForm.append($commentContainer);
                         $review.append($commentForm);
                         var $comments = $('<div>').addClass('comments');
-                        review.comments.forEach(function(comment) {
+                        review.comments.forEach(function (comment) {
                             var $comment = $('<div>').addClass('comment');
                             var $commentDiv = $('<div>');
                             $commentDiv.append($('<a>').attr('href', '/profile/' + comment.user.user).append($('<img>').attr('src', comment.user.picture)));
@@ -100,9 +100,9 @@ $(document).ready(function(){
 
                         // Append the constructed review element to the reviews-container
                         $('.reviews-container').append($review);
-                     });
+                    });
                 }
-                else{
+                else {
                     alert('error');
                 }
             }
@@ -111,7 +111,7 @@ $(document).ready(function(){
 
     })
 
-    $("#create-review-form").submit(function(event) { 
+    $("#create-review-form").submit(function (event) {
         // Prevent default form submission behavior
         event.preventDefault();
 
@@ -126,12 +126,12 @@ $(document).ready(function(){
             return; // Exit the function if validation fails
         }
 
-        if(title.length > 100){
+        if (title.length > 100) {
             alert('Title too long! (max 100 characters)');
             return;
         }
 
-        if(content.length > 500){
+        if (content.length > 500) {
             alert('Content too long! (max 500 characters)');
             return;
         }
@@ -156,14 +156,14 @@ $(document).ready(function(){
                 data: formData,
                 processData: false,
                 contentType: false,
-                success: function(response) {
+                success: function (response) {
                     console.log(response);
                     imagePath = `images/client-uploaded-files/${image.name}`;
 
                     // Continue with review submission
                     submitReview(title, content, rating, imagePath, date, condoId);
                 },
-                error: function(xhr, status, error) {
+                error: function (xhr, status, error) {
                     // Handle failure response
                     console.error('Error uploading image:', error);
                     alert(xhr.responseJSON.message); // Display error message
@@ -177,31 +177,31 @@ $(document).ready(function(){
 
 
     // create comment form
-    $(".create-comment-form").submit(function(event) { 
+    $(".create-comment-form").submit(function (event) {
         // Prevent default form submission behavior
         event.preventDefault();
 
         // Store a reference to $(this) in a variable
         var $form = $(this);
 
-        $.get('/loggedInStatus', function(data) {
-            if(!data.isAuthenticated) {
+        $.get('/loggedInStatus', function (data) {
+            if (!data.isAuthenticated) {
                 alert("You must be logged in to create a comment.");
                 return;
-            } 
+            }
 
             // Get form data
             var reviewId = $form.closest('.grid-item').attr('id');
             var content = $("#" + reviewId + " .comment-textarea").val();
             var date = new Date().toLocaleDateString();
-            
+
             // Validate the form inputs
             if (!content) {
                 alert("Please put a comment first.");
                 return; // Exit the function if validation fails
             }
 
-            if(content.length > 500){
+            if (content.length > 500) {
                 alert('Comment too long! (max 500 characters)');
                 return;
             }
@@ -215,11 +215,11 @@ $(document).ready(function(){
 
             // Send POST request to server
             $.post('/create-comment', formData)
-                .done(function(response) {
+                .done(function (response) {
                     // Handle success response
                     alert(response.message); // Display success message
                     $(".comment-textarea").val("");
-                    
+
                     // Create a new review element
                     var reviewElement = document.createElement("div");
                     reviewElement.classList.add("comment");
@@ -244,7 +244,7 @@ $(document).ready(function(){
                     // Prepend the new review to the reviews container
                     $("#" + reviewId + " .comments").prepend(reviewElement);
                 })
-                .fail(function(xhr, status, error) {
+                .fail(function (xhr, status, error) {
                     // Handle failure response
                     console.error('Error creating account:', error);
                     alert(xhr.responseJSON.message); // Display error message
@@ -253,59 +253,160 @@ $(document).ready(function(){
     });
 
 
-$("#create-review").hide();
-
-$("#close-create-review").click(function(){
     $("#create-review").hide();
-})
 
-$("#show-create-review").click(function() {
-    $.get('/loggedInStatus', function(data) {
-            if(data.isAuthenticated) { 
+    $("#close-create-review").click(function () {
+        $("#create-review").hide();
+    })
+
+    $("#show-create-review").click(function () {
+        $.get('/loggedInStatus', function (data) {
+            if (data.isAuthenticated) {
                 $("#create-review").show();
             } else {
                 alert("You must be logged in to create a review.");
             }
+        });
     });
-});
 
-// 
-$('.star-rating-button').on('mouseenter', selectStars);
+    // 
+    $('.star-rating-button').on('mouseenter', selectStars);
 
-$('.star-rating-button').on('mouseleave', resetStars);
+    $('.star-rating-button').on('mouseleave', resetStars);
 
-$('.star-rating-button').on('click', function() {
-    const ratingValue = $(this).data('rating');
-    highlightStars(ratingValue);
+    $('.star-rating-button').on('click', function () {
+        const ratingValue = $(this).data('rating');
+        highlightStars(ratingValue);
 
-    // Remove the mouseenter and mouseleave event listeners from all buttons
-    $('.star-rating-button').off('mouseenter mouseleave');
-});
+        // Remove the mouseenter and mouseleave event listeners from all buttons
+        $('.star-rating-button').off('mouseenter mouseleave');
+    });
 
-function selectStars() {
-    const ratingValue = $(this).data('rating');
-    highlightStars(ratingValue);
-}
+    function selectStars() {
+        const ratingValue = $(this).data('rating');
+        highlightStars(ratingValue);
+    }
 
-function highlightStars(rating) {
-    $('.star-rating-button').each(function() {
-        const buttonRating = $(this).data('rating');
-        if (buttonRating <= rating) {
-            $(this).addClass('active');
-        } else {
-            $(this).removeClass('active');
+    function highlightStars(rating) {
+        $('.star-rating-button').each(function () {
+            const buttonRating = $(this).data('rating');
+            if (buttonRating <= rating) {
+                $(this).addClass('active');
+            } else {
+                $(this).removeClass('active');
+            }
+        });
+    }
+
+    function resetStars() {
+        $('.star-rating-button').removeClass('active');
+    }
+
+    // --- CONDO EDITING (Owner only) ---
+
+    // Edit Name
+    $('#edit-name-btn').click(function () {
+        $('#condo-name-display').hide();
+        $(this).hide();
+        $('#edit-name-container').show();
+    });
+
+    $('#cancel-name-btn').click(function () {
+        $('#edit-name-container').hide();
+        $('#condo-name-display').show();
+        $('#edit-name-btn').show();
+        // Reset input to original value
+        $('#edit-name-input').val($('#condo-name-display').text());
+    });
+
+    $('#save-name-btn').click(function () {
+        const newName = $('#edit-name-input').val().trim();
+        if (!newName) {
+            alert('Name cannot be empty.');
+            return;
         }
+        if (newName.length > 100) {
+            alert('Name cannot exceed 100 characters.');
+            return;
+        }
+        updateCondo({ name: newName }, function () {
+            $('#condo-name-display').text(newName);
+            $('#edit-name-container').hide();
+            $('#condo-name-display').show();
+            $('#edit-name-btn').show();
+        });
     });
-}
 
-function resetStars() {
-    $('.star-rating-button').removeClass('active');
-}
+    // Edit Description
+    $('#edit-desc-btn').click(function () {
+        $('#condo-desc-display').hide();
+        $(this).hide();
+        $('#edit-desc-container').show();
     });
+
+    $('#cancel-desc-btn').click(function () {
+        $('#edit-desc-container').hide();
+        $('#condo-desc-display').show();
+        $('#edit-desc-btn').show();
+        // Reset input to original value
+        $('#edit-desc-input').val($('#condo-desc-display').text());
+    });
+
+    $('#save-desc-btn').click(function () {
+        const newDesc = $('#edit-desc-input').val().trim();
+        if (!newDesc) {
+            alert('Description cannot be empty.');
+            return;
+        }
+        if (newDesc.length > 1000) {
+            alert('Description cannot exceed 1000 characters.');
+            return;
+        }
+        updateCondo({ description: newDesc }, function () {
+            $('#condo-desc-display').text(newDesc);
+            $('#edit-desc-container').hide();
+            $('#condo-desc-display').show();
+            $('#edit-desc-btn').show();
+        });
+    });
+
+    function updateCondo(data, onSuccess) {
+        const condoId = window.location.pathname.split('/condo/')[1];
+
+        // Merge current data to ensure we send both name and description if needed, 
+        // but for this specific implementation, we can send just what changed if the backend supports partial updates.
+        // However, our backend implementation expects both or updates both. 
+        // Let's fetch the current values from the DOM to be safe if we need to send both.
+
+        const currentName = $('#condo-name-display').text();
+        const currentDesc = $('#condo-desc-display').text();
+
+        const payload = {
+            name: data.name || currentName,
+            description: data.description || currentDesc
+        };
+
+        $.ajax({
+            url: '/update-condo/' + condoId,
+            method: 'PATCH',
+            contentType: 'application/json',
+            data: JSON.stringify(payload),
+            success: function (res) {
+                alert(res.message);
+                if (onSuccess) onSuccess();
+            },
+            error: function (xhr) {
+                const msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Error updating condo.';
+                alert(msg);
+            }
+        });
+    }
+
+});
 
 function getRating() {
     let maxRating = 0;
-    $('.star-rating-button').each(function() {
+    $('.star-rating-button').each(function () {
         if ($(this).hasClass('active')) {
             const buttonRating = parseInt($(this).data('rating'));
             maxRating = Math.max(maxRating, buttonRating);
@@ -329,13 +430,13 @@ function submitReview(title, content, rating, imagePath, date, condoId) {
         url: '/create-review',
         type: 'PATCH',
         data: formData,
-        success: function(response) {
+        success: function (response) {
             $("#create-review").hide();
             // Handle success response
             alert(response.message); // Display success message
             window.location.reload();
         },
-        error: function(xhr, status, error) {
+        error: function (xhr, status, error) {
             // Handle failure response
             console.error('Error publishing review:', error);
             alert(xhr.responseJSON.message); // Display error message
