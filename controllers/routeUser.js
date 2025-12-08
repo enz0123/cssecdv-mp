@@ -205,6 +205,7 @@ function add(server) {
         const username = req.body.username;
         const answer1 = req.body.answer1;
         const answer2 = req.body.answer2;
+        const newPassword = req.body.newPassword;
 
         try {
             const user = await userModel.findOne({ user: username });
@@ -214,7 +215,10 @@ function add(server) {
                     await userFunctions.checkSecurityQuestions(user._id, answer1, answer2);
 
                 if (status === 200) {
-                    await userFunctions.resetPassword(user._id);
+                    if (!newPassword) {
+                        return resp.status(400).json({ message: 'New password is required.' });
+                    }
+                    await userFunctions.resetPassword(user._id, newPassword);
                 }
 
                 return resp.status(status).json({ message: message });
