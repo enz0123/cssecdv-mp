@@ -57,18 +57,19 @@ async function getSecurityQuestions(userId){
         console.log('Error occurred fetching security questions. ' + error)
     }
 }
-
-async function recordLoginAttempt(userId, success) {
+async function recordLoginAttempt(userId, username, success, route, method) {
     try {
         const loginAttempt = loginModel({
-            userId: userId,
+            userId: userId || null,
+            username: username || null,
+            route: route || 'POST /login',
+            method: method || 'POST',
             success: success
         });
 
         await loginAttempt.save();
 
-        // Check if max attempts reached within 15 minutes, block user if necessary
-        if (!success) {
+        if (!success && userId) {
             const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
 
             const loginAttempts = await loginModel.find({

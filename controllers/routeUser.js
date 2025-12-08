@@ -87,6 +87,9 @@ function add(server) {
 
         let findStatus, findMessage, user;
 
+        console.log('LOGIN ATTEMPT body:', req.body); // debug
+
+        // Case 1: Missing username or password
         if (!username || !password) {
             await userFunctions.logValidationFailure(
                 req.session ? req.session._id : null,
@@ -95,11 +98,22 @@ function add(server) {
                 'POST',
                 'Missing username or password.'
             );
+
+            // log the auth attempt even if userId is unknown
+            await userFunctions.recordLoginAttempt(
+                null,                 // userId
+                username || null,     // username attempted
+                false,                // success
+                '/login',
+                'POST'
+            );
+
             return res.status(400).json({ message: 'Error. Invalid details.' });
         }
 
         [findStatus, findMessage, user] = await userFunctions.findUser(username, password);
 
+        // Case 2: User exists but account is blocked
         if (user) {
             const isBlocked = await userFunctions.isUserBlocked(user._id);
             if (isBlocked.blocked) {
@@ -108,8 +122,13 @@ function add(server) {
                     'Your account is temporarily locked due to multiple failed login attempts. ' +
                     'Please try again after a short period of time.';
 
-                // record failed attempt; recordLoginAttempt will also log lockout if threshold is hit
-                await userFunctions.recordLoginAttempt(user._id, false);
+                await userFunctions.recordLoginAttempt(
+                    user._id,
+                    user.user,
+                    false,
+                    '/login',
+                    'POST'
+                );
 
                 return res.status(findStatus).json({
                     message: findMessage,
@@ -118,14 +137,21 @@ function add(server) {
             }
         }
 
+        // Case 3: Successful login
         if (findStatus === 200 && user) {
             const loginReport = await userFunctions.getLastLoginAttempt(user._id);
 
             findMessage = 'Login successful.' + loginReport;
 
-            await userFunctions.recordLoginAttempt(user._id, true);
+            await userFunctions.recordLoginAttempt(
+                user._id,
+                user.user,
+                true,
+                '/login',
+                'POST'
+            );
 
-            if (rememberMe === 'true') {
+            if (rememberMe === 'true' || rememberMe === true) {
                 // 21 days
                 req.session.cookie.expires = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000);
             }
@@ -135,15 +161,37 @@ function add(server) {
             req.session.role = user.role;
             req.session.isAuthenticated = true;
             req.session._id = user._id;
-        } else if (user) {
-            // Login failed but user exists → record failed attempt
-            await userFunctions.recordLoginAttempt(user._id, false);
+
+            return res.status(200).json({
+                message: findMessage,
+                picture: user.picture
+            });
         }
 
-        if (findStatus !== 200) {
-            findStatus = findStatus || 401;
-            findMessage = 'Error. Invalid username or password.';
+        // Case 4: Failed login (wrong password OR non-existent username)
+
+        if (user) {
+            // wrong password
+            await userFunctions.recordLoginAttempt(
+                user._id,
+                user.user,
+                false,
+                '/login',
+                'POST'
+            );
+        } else {
+            // user does NOT exist
+            await userFunctions.recordLoginAttempt(
+                null,
+                username,
+                false,
+                '/login',
+                'POST'
+            );
         }
+
+        findStatus = findStatus || 401;
+        findMessage = 'Error. Invalid username or password.';
 
         return res.status(findStatus).json({
             message: findMessage,
