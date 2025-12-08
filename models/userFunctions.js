@@ -9,7 +9,15 @@ const securityQuestionModel = require('./SecurityQuestion');
 const securityLogModel = require('./SecurityLog');
 
 // can be added to hash the password for confidentiality
-const bcrypt = require('bcrypt'); 
+let bcrypt;
+try {
+    // Prefer native bcrypt when available
+    bcrypt = require('bcrypt');
+} catch (err) {
+    // Fall back to bcryptjs (pure JS) when native build is missing
+    console.warn('Native bcrypt not available, falling back to bcryptjs');
+    bcrypt = require('bcryptjs');
+}
 const saltRounds = 10;
 
 const securityQuestionsObj = {
