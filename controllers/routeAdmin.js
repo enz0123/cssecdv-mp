@@ -5,6 +5,8 @@ const loginAttemptModel = require('../models/LoginAttempt');
 const securityLogModel = require('../models/SecurityLog');
 const userFunctions = require('../models/userFunctions');
 const auth = require('../middleware/auth');
+const condoModel = require('../models/Condo');
+const ownerCondoModel = require('../models/OwnerCondo');
 
 const ALLOWED_ROLES = ['Admin', 'Owner', 'Condo Bro'];
 
@@ -15,10 +17,11 @@ function add(server) {
     // 2.4.3: Admin dashboard main page (view only for Admin)
     server.get('/admin', auth.isAuthorized(['Admin']), async (req, res, next) => {
         try {
-            const [totalUsers, adminCount, ownerCount] = await Promise.all([
+            const [totalUsers, adminCount, ownerCount, condos] = await Promise.all([
                 userModel.countDocuments({}),
                 userModel.countDocuments({ role: 'Admin' }),
-                userModel.countDocuments({ role: 'Owner' })
+                userModel.countDocuments({ role: 'Owner' }),
+                condoModel.find().lean()
             ]);
 
             const clientCount = totalUsers - adminCount - ownerCount;
@@ -32,7 +35,8 @@ function add(server) {
                     adminCount,
                     ownerCount,
                     clientCount
-                }
+                },
+                condos: condos
             });
         } catch (err) {
             console.error('Error loading admin dashboard:', err);
@@ -84,7 +88,8 @@ function add(server) {
                 securityQn1,
                 securityQn2,
                 securityAnswer1,
-                securityAnswer2
+                securityAnswer2,
+                condoId
             } = req.body;
 
             if (!username || !password || !role) {
@@ -138,6 +143,17 @@ function add(server) {
                 { $set: { role } }
             );
 
+            // Handle Owner-Condo assignment
+            if (role === 'Owner' && condoId) {
+                const newUser = await userModel.findOne({ user: username });
+                if (newUser) {
+                    await ownerCondoModel.create({
+                        userId: newUser._id,
+                        condoId: condoId
+                    });
+                }
+            }
+
             try {
                 await securityLogModel.create({
                     eventType: 'ADMIN_ACTION',
@@ -148,7 +164,8 @@ function add(server) {
                     message: `Admin created new user with role ${role}.`,
                     metadata: {
                         targetUsername: username,
-                        targetRole: role
+                        targetRole: role,
+                        assignedCondoId: condoId || null
                     }
                 });
             } catch (logErr) {

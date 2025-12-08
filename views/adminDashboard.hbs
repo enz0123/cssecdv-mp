@@ -67,6 +67,16 @@
               </select>
             </div>
 
+            <div class="admin-form-row" id="admin-condo-select-row" style="display: none;">
+              <label>Assign Condo<span class="required">*</span></label>
+              <select id="admin-create-condo">
+                <option value="">-- Select a Condo --</option>
+                {{#each condos}}
+                <option value="{{this.id}}">{{this.name}}</option>
+                {{/each}}
+              </select>
+            </div>
+
             <div class="admin-form-row">
               <label>Security Question 1<span class="required">*</span></label>
               <select id="admin-securityQuestion1">
@@ -522,6 +532,16 @@
       $('#' + target).addClass('active');
     });
 
+    // Toggle Condo Dropdown based on Role
+    $('#admin-create-role').on('change', function () {
+      if ($(this).val() === 'Owner') {
+        $('#admin-condo-select-row').show();
+      } else {
+        $('#admin-condo-select-row').hide();
+        $('#admin-create-condo').val('');
+      }
+    });
+
     // --- USER CREATION (Admin / Owner / Condo Bro) ---
     $('#admin-create-user-form').on('submit', function (e) {
       e.preventDefault();
@@ -534,14 +554,16 @@
       const securityQn2 = $('#admin-securityQuestion2').val();
       const securityAnswer1 = $('#admin-security-answer-1').val().trim();
       const securityAnswer2 = $('#admin-security-answer-2').val().trim();
+      const condoId = $('#admin-create-condo').val();
 
       if (securityQn1 === securityQn2) {
         $('#admin-create-user-message').addClass('error').text('Security questions must be different.');
         return;
       }
 
-      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-      if (!passwordRegex.test(password)) {
+      if ((password).length < 9 || !(/[a-z]/.test(password)) ||
+        !(/[A-Z]/.test(password)) || !(/[0-9]/.test(password)) ||
+        !(/[\W_]/.test(password))) {
         $('#admin-create-user-message').addClass('error').text('Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.');
         return;
       }
@@ -561,6 +583,10 @@
         $msg.addClass('error').text('Answers to security questions must be less than 100 characters.');
         return;
       }
+      if (role === 'Owner' && !condoId) {
+        $msg.addClass('error').text('Please select a condo for the owner.');
+        return;
+      }
 
       const payload = {
         username: username,
@@ -572,7 +598,8 @@
         securityQn1: securityQn1,
         securityQn2: securityQn2,
         securityAnswer1: securityAnswer1,
-        securityAnswer2: securityAnswer2
+        securityAnswer2: securityAnswer2,
+        condoId: role === 'Owner' ? condoId : null
       };
 
       $.ajax({
@@ -583,7 +610,7 @@
         success: function (res) {
           $msg.addClass('success').text(res.message || 'User created successfully.');
           $('#admin-create-user-form')[0].reset();
-          $('#admin-create-role').val('Admin');
+          $('#admin-create-role').val('Admin').trigger('change');
           loadAdminUsers(); // refresh list in Roles tab
         },
         error: function (xhr) {
