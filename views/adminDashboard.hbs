@@ -278,7 +278,7 @@
     background: #ffffff;
     border-radius: 12px;
     padding: 24px 28px 32px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
   }
 
   .admin-title {
@@ -359,7 +359,7 @@
     border: 1px solid #e2e8f0;
   }
 
-  .admin-card + .admin-card {
+  .admin-card+.admin-card {
     margin-top: 18px;
   }
 
@@ -503,6 +503,7 @@
     .admin-container {
       padding: 18px 14px 24px;
     }
+
     .admin-stats-row {
       flex-direction: column;
     }
@@ -511,9 +512,9 @@
 
 {{!-- Page-specific JS --}}
 <script>
-  $(function() {
+  $(function () {
     // Tabs
-    $('.admin-tab').on('click', function() {
+    $('.admin-tab').on('click', function () {
       var target = $(this).data('tab');
       $('.admin-tab').removeClass('active');
       $(this).addClass('active');
@@ -522,7 +523,7 @@
     });
 
     // --- USER CREATION (Admin / Owner / Condo Bro) ---
-    $('#admin-create-user-form').on('submit', function(e) {
+    $('#admin-create-user-form').on('submit', function (e) {
       e.preventDefault();
 
       const username = $('#admin-create-username').val().trim();
@@ -533,6 +534,17 @@
       const securityQn2 = $('#admin-securityQuestion2').val();
       const securityAnswer1 = $('#admin-security-answer-1').val().trim();
       const securityAnswer2 = $('#admin-security-answer-2').val().trim();
+
+      if (securityQn1 === securityQn2) {
+        $('#admin-create-user-message').addClass('error').text('Security questions must be different.');
+        return;
+      }
+
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+      if (!passwordRegex.test(password)) {
+        $('#admin-create-user-message').addClass('error').text('Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.');
+        return;
+      }
 
       const $msg = $('#admin-create-user-message');
       $msg.removeClass('error success').text('');
@@ -568,13 +580,13 @@
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify(payload),
-        success: function(res) {
+        success: function (res) {
           $msg.addClass('success').text(res.message || 'User created successfully.');
           $('#admin-create-user-form')[0].reset();
           $('#admin-create-role').val('Admin');
           loadAdminUsers(); // refresh list in Roles tab
         },
-        error: function(xhr) {
+        error: function (xhr) {
           const message = xhr.responseJSON && xhr.responseJSON.message
             ? xhr.responseJSON.message
             : 'Error creating user.';
@@ -594,7 +606,7 @@
 
       const url = '/admin/users' + (params.length ? ('?' + params.join('&')) : '');
 
-      $.get(url, function(res) {
+      $.get(url, function (res) {
         const $tbody = $('#admin-users-table tbody');
         $tbody.empty();
 
@@ -603,7 +615,7 @@
           return;
         }
 
-        res.users.forEach(function(u) {
+        res.users.forEach(function (u) {
           const createdAt = u.createdAt ? new Date(u.createdAt).toLocaleString() : '';
           const $row = $('<tr></tr>').attr('data-user-id', u._id);
 
@@ -613,7 +625,7 @@
 
           const $actionCell = $('<td></td>');
           const $select = $('<select class="admin-role-select"></select>');
-          ['Admin', 'Owner', 'Condo Bro'].forEach(function(roleOpt) {
+          ['Admin', 'Owner', 'Condo Bro'].forEach(function (roleOpt) {
             const $opt = $('<option></option>')
               .val(roleOpt)
               .text(roleOpt);
@@ -627,20 +639,20 @@
           $row.append($usernameCell, $roleCell, $createdCell, $actionCell);
           $tbody.append($row);
         });
-      }).fail(function() {
+      }).fail(function () {
         $('#admin-users-message')
           .addClass('error')
           .text('Error fetching users.');
       });
     }
 
-    $('#admin-users-refresh').on('click', function() {
+    $('#admin-users-refresh').on('click', function () {
       $('#admin-users-message').removeClass('error success').text('');
       loadAdminUsers();
     });
 
     // Handle role update click
-    $('#admin-users-table').on('click', '.admin-update-role-btn', function() {
+    $('#admin-users-table').on('click', '.admin-update-role-btn', function () {
       const $row = $(this).closest('tr');
       const userId = $row.data('user-id');
       const newRole = $row.find('.admin-role-select').val();
@@ -658,11 +670,11 @@
         method: 'PATCH',
         contentType: 'application/json',
         data: JSON.stringify({ newRole: newRole }),
-        success: function(res) {
+        success: function (res) {
           $msg.addClass('success').text(res.message || 'Role updated successfully.');
           loadAdminUsers();
         },
-        error: function(xhr) {
+        error: function (xhr) {
           const message = xhr.responseJSON && xhr.responseJSON.message
             ? xhr.responseJSON.message
             : 'Error updating role.';
@@ -688,7 +700,7 @@
 
       const url = '/admin/logs/security' + (params.length ? ('?' + params.join('&')) : '');
 
-      $.get(url, function(res) {
+      $.get(url, function (res) {
         const $tbody = $('#admin-security-logs-table tbody');
         $tbody.empty();
 
@@ -697,7 +709,7 @@
           return;
         }
 
-        res.logs.forEach(function(log) {
+        res.logs.forEach(function (log) {
           const time = log.createdAt ? new Date(log.createdAt).toLocaleString() : '';
           const userLabel = log.username || (log.userId && log.userId.user) || '';
 
@@ -711,13 +723,13 @@
           );
           $tbody.append($row);
         });
-      }).fail(function() {
+      }).fail(function () {
         const $tbody = $('#admin-security-logs-table tbody');
         $tbody.empty().append('<tr><td colspan="5">Error loading security logs.</td></tr>');
       });
     }
 
-    $('#log-security-refresh').on('click', function() {
+    $('#log-security-refresh').on('click', function () {
       loadSecurityLogs();
     });
 
@@ -732,7 +744,7 @@
 
       const url = '/admin/logs/auth' + (params.length ? ('?' + params.join('&')) : '');
 
-      $.get(url, function(res) {
+      $.get(url, function (res) {
         const $tbody = $('#admin-auth-logs-table tbody');
         $tbody.empty();
 
@@ -741,7 +753,7 @@
           return;
         }
 
-        res.attempts.forEach(function(attempt) {
+        res.attempts.forEach(function (attempt) {
           const time = attempt.loginAt ? new Date(attempt.loginAt).toLocaleString() : '';
           const user = attempt.userId && attempt.userId.user ? attempt.userId.user : '';
           const role = attempt.userId && attempt.userId.role ? attempt.userId.role : '';
@@ -756,13 +768,13 @@
           );
           $tbody.append($row);
         });
-      }).fail(function() {
+      }).fail(function () {
         const $tbody = $('#admin-auth-logs-table tbody');
         $tbody.empty().append('<tr><td colspan="4">Error loading authentication logs.</td></tr>');
       });
     }
 
-    $('#authlog-refresh').on('click', function() {
+    $('#authlog-refresh').on('click', function () {
       loadAuthLogs();
     });
 
