@@ -1,14 +1,14 @@
-$(document).ready(function(){
+$(document).ready(function () {
 
     $("#forgot-password").click(() => {
         let logUsername = $('#log-username').val()
 
-        if(logUsername.length < 1){
+        if (logUsername.length < 1) {
             alert('Please input a username to continue.');
             return;
         }
 
-        if(logUsername.length > 20){
+        if (logUsername.length > 20) {
             alert('Username must be less than 20 characters before continuing.');
             return;
         }
@@ -19,11 +19,11 @@ $(document).ready(function(){
     // Check login status on load
     $.get(
         'loggedInStatus',
-        function(data, status){
-            if(status === 'success'){
+        function (data, status) {
+            if (status === 'success') {
                 $("#login").hide();
 
-                if(data.isAuthenticated){
+                if (data.isAuthenticated) {
                     $(".nav-logged-out").hide();
                     $(".nav-logged-in").show();
 
@@ -42,20 +42,20 @@ $(document).ready(function(){
                         $("#admin-dashboard-dropdown").hide();
                     }
 
-                    if(typeof checkUser === 'function'){
+                    if (typeof checkUser === 'function') {
                         checkUser();
                     } else {
                         console.log('Not view profile page');
                     }
                 }
-                else{
+                else {
                     $(".nav-logged-in").hide();
                     $(".nav-logged-out").show();
                     $("#logout-button").hide();
 
                     $("#admin-dashboard-dropdown").hide();
 
-                    if(typeof checkUser === 'function'){
+                    if (typeof checkUser === 'function') {
                         checkUser();
                     } else {
                         console.log('Not view profile page');
@@ -66,18 +66,18 @@ $(document).ready(function(){
     );
 
     // Logout (server-side)
-    $("#logout-button").click(function(){
+    $("#logout-button").click(function () {
         $.post(
             'logout',
             {},
-            function(data, status){
-                if(status === 'success') {
+            function (data, status) {
+                if (status === 'success') {
                     $(".nav-logged-in").hide();
                     $("#logout-button").hide();
                     // admin links will be hidden on reload by loggedInStatus
-                    window.location.href="/";
+                    window.location.href = "/";
                 }
-                else{
+                else {
                     alert('Error logging out.');
                 }
             }
@@ -85,9 +85,9 @@ $(document).ready(function(){
     });
 
     // Account creation form submission
-    $("#create-account-form").submit(function(event) {
+    $("#create-account-form").submit(function (event) {
         event.preventDefault();
-        
+
         if (!checkCreateAccountForm()) {
             return;
         }
@@ -108,20 +108,25 @@ $(document).ready(function(){
             securityAnswer2: $("#security-answer-2").val()
         };
 
+        if ($("#securityQuestion1").val() === $('#securityQuestion2').val()) {
+            alert("Please select different security questions.");
+            return;
+        }
+
         $("#create-account").hide();
 
         $.post('/create-account', formData)
-            .done(function(response) {
+            .done(function (response) {
                 alert(response.message);
             })
-            .fail(function(xhr, status, error) {
+            .fail(function (xhr, status, error) {
                 console.error('Error creating account:', error);
                 alert(xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Error creating account.');
             });
     });
 
     // Login form submission
-    $('#login-form').submit(function(event) {
+    $('#login-form').submit(function (event) {
         event.preventDefault();
 
         if (!checkLoginForm()) {
@@ -135,7 +140,7 @@ $(document).ready(function(){
         $("#login").hide();
 
         $.post('/login', { username, password, rememberMe })
-            .done(function(response) {
+            .done(function (response) {
                 console.log(response.message);
 
                 $("#username-display").text(username);
@@ -148,9 +153,9 @@ $(document).ready(function(){
 
                 alert("Welcome to The Condo Bro, " + username + " " + response.message);
 
-                window.location.href="/";
+                window.location.href = "/";
             })
-            .fail(function(xhr, status, error) {
+            .fail(function (xhr, status, error) {
                 console.error('Login failed:', error);
                 alert(xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Login failed.');
             });
@@ -159,33 +164,33 @@ $(document).ready(function(){
     $("#create-account").hide();
 
     // Dropdown magic
-    $(".icon").hover(function(){
+    $(".icon").hover(function () {
         $(this).toggleClass("highlighted");
     });
 
-    $(".icon").hover(function(){
+    $(".icon").hover(function () {
         $(".nav-dropdown").toggle($(this).hasClass("highlighted"));
     });
 
-    $("#show-login").click(function(){
+    $("#show-login").click(function () {
         $("#login").slideDown();
         $(".nav-dropdown").hide();
     });
 
-    $("#close").click(function(){
+    $("#close").click(function () {
         $("#login").hide();
     });
-    
-    $("#close-create").click(function(){
+
+    $("#close-create").click(function () {
         $("#create-account").hide();
     });
 
-    $("#show-create-account").click(function(){
+    $("#show-create-account").click(function () {
         $("#create-account").show();
     });
 
     // Login button click event
-    $("#login-button").click(function(){
+    $("#login-button").click(function () {
         if ($(this).text() === "View Profile") {
             window.location.href = "/profile/" + $("#username-display").text();
         } else {
@@ -195,7 +200,7 @@ $(document).ready(function(){
     });
 
     // Signup button click event
-    $("#signup-button").click(function(){
+    $("#signup-button").click(function () {
         if ($(this).text() === "Edit Profile") {
             window.location.href = "/edit-profile";
         } else {
@@ -205,7 +210,7 @@ $(document).ready(function(){
     });
 
     // View condos
-    $("#view-condo").click(function(){
+    $("#view-condo").click(function () {
         if (window.location.pathname === "/") {
             window.scrollBy({
                 top: 650,
@@ -213,60 +218,60 @@ $(document).ready(function(){
                 behavior: 'smooth'
             });
         } else {
-            window.location.href = "/";       
+            window.location.href = "/";
         }
     });
 
     // Admin dashboard in dropdown
-    $("#admin-dashboard-dropdown").click(function(){
+    $("#admin-dashboard-dropdown").click(function () {
         window.location.href = "/admin";
     });
 });
 
-function updateDropdownText(username) { 
+function updateDropdownText(username) {
     $("#login-button").text(username !== '' ? "View Profile" : 'Login');
     $("#signup-button").text(username !== '' ? 'Edit Profile' : 'Signup');
     $("#logout-button").text('Log Out');
     $("#logout-button").show();
 }
 
-function showLogInView(){
+function showLogInView() {
     $(".nav-logged-out").hide();
     $(".nav-logged-in").show();
 }
 
-function checkWhiteSpace(text){
+function checkWhiteSpace(text) {
     return text.indexOf(' ') !== -1;
 }
 
-function checkLoginForm(){
+function checkLoginForm() {
     let username = document.forms["login-form"]["username"].value;
     let password = document.forms["login-form"]["password"].value;
 
-    if(username.length < 1 || password.length < 1){
+    if (username.length < 1 || password.length < 1) {
         alert("Login fields must not be empty.");
         return false;
     }
 
-    if(username.length > 20){
+    if (username.length > 20) {
         alert("Username must be less than 20 characters.");
         return false;
     }
 
-    if(password.length > 20){
+    if (password.length > 20) {
         alert("Password must be less than 20 characters.");
         return false;
     }
 
-    if(checkWhiteSpace(username) || checkWhiteSpace(password)){
+    if (checkWhiteSpace(username) || checkWhiteSpace(password)) {
         alert("Username and password must not contain white space.");
         return false;
     }
-    
+
     return true;
 }
 
-function checkCreateAccountForm(){
+function checkCreateAccountForm() {
     let username = document.forms["create-account-form"]["username"].value;
     let password = document.forms["create-account-form"]["password"].value;
     let confirmPassword = document.forms["create-account-form"]["confirm-password"].value;
@@ -275,45 +280,45 @@ function checkCreateAccountForm(){
     let securityQn1 = $("#security-answer-1").val();
     let securityQn2 = $("#security-answer-2").val();
 
-    if(securityQn1.length > 100 || securityQn2.length > 100){
+    if (securityQn1.length > 100 || securityQn2.length > 100) {
         alert("Answer to Security Questions must be less than 100 characters.");
         return false;
     }
 
-    if(username.length < 1 || password.length < 1 || confirmPassword.length < 1){
+    if (username.length < 1 || password.length < 1 || confirmPassword.length < 1) {
         alert("Required fields must not be empty.");
         return false;
     }
 
-    if(username.length > 20){
+    if (username.length > 20) {
         alert("Username must be less than 20 characters.");
         return false;
     }
 
-    if(password.length > 20){
+    if (password.length > 20) {
         alert("Password must be less than 20 characters.");
         return false;
     }
 
-    if(description.length > 500){
+    if (description.length > 500) {
         alert("Bio must be less than 500 characters.");
         return false;
     }
 
-    if(checkWhiteSpace(username) || checkWhiteSpace(password) || checkWhiteSpace(confirmPassword)){
+    if (checkWhiteSpace(username) || checkWhiteSpace(password) || checkWhiteSpace(confirmPassword)) {
         alert("Username and password must not contain white space.");
         return false;
     }
 
     // Password complexity
-    if((password).length < 9 || !(/[a-z]/.test(password)) ||
-       !(/[A-Z]/.test(password)) || !(/[0-9]/.test(password)) ||
-       !(/[\W_]/.test(password))){
+    if ((password).length < 9 || !(/[a-z]/.test(password)) ||
+        !(/[A-Z]/.test(password)) || !(/[0-9]/.test(password)) ||
+        !(/[\W_]/.test(password))) {
         alert("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
         return false;
     }
 
-    if(password !== confirmPassword){
+    if (password !== confirmPassword) {
         alert("Passwords do not match. Please try again.");
         return false;
     }
