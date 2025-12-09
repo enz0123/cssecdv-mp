@@ -49,6 +49,156 @@ function add(server) {
         try {
             let createSuccess, createStatus, createMessage;
 
+            username = req.body.username;
+            password = req.body.password;
+            picture = req.body.picture;
+            bio = req.body.bio;
+            securityQn1 = req.body.securityQn1;
+            securityQn2 = req.body.securityQn2;
+            securityAnswer1 = req.body.securityAnswer1;
+            securityAnswer2 = req.body.securityAnswer2;
+            confirmPassword = req.body.confirmPassword;
+
+            console.log(username, password, confirmPassword, securityAnswer1, securityAnswer2);
+
+            if (!username || !password || !confirmPassword || !securityAnswer1 || !securityAnswer2) {
+                await userFunctions.logValidationFailure(
+                    req.session ? req.session._id : null,
+                    req.session ? req.session.username : null,
+                    '/create-account',
+                    'POST',
+                    'Missing required fields.'
+                );
+
+                createSuccess = false;
+                createStatus = 400;
+                createMessage = 'Error. Missing required fields.';
+                return resp.status(createStatus).json({
+                    success: createSuccess,
+                    status: createStatus,
+                    message: createMessage
+                });
+            }
+
+            if (username.length > 20 || password.length > 20) {
+                await userFunctions.logValidationFailure(
+                    req.session ? req.session._id : null,
+                    req.session ? req.session.username : null,
+                    '/create-account',
+                    'POST',
+                    'Username or password too long (20 chars max).'
+                );
+
+
+
+                createSuccess = false;
+                createStatus = 400;
+                createMessage = 'Error. Username or password too long (20 chars max).';
+                return resp.status(createStatus).json({
+                    success: createSuccess,
+                    status: createStatus,
+                    message: createMessage
+                });
+            }
+
+            if (username.includes(' ') || password.includes(' ')) {
+                await userFunctions.logValidationFailure(
+                    req.session ? req.session._id : null,
+                    req.session ? req.session.username : null,
+                    '/create-account',
+                    'POST',
+                    'Username or password contains white space.'
+                );
+
+                createSuccess = false;
+                createStatus = 400;
+                createMessage = 'Error. Username or password contains white space.';
+                return resp.status(createStatus).json({
+                    success: createSuccess,
+                    status: createStatus,
+                    message: createMessage
+                });
+            }
+
+            if (bio.length > 500) {
+                await userFunctions.logValidationFailure(
+                    req.session ? req.session._id : null,
+                    req.session ? req.session.username : null,
+                    '/create-account',
+                    'POST',
+                    'Bio too long (500 chars max).'
+                );
+
+                createSuccess = false;
+                createStatus = 400;
+                createMessage = 'Error. Bio too long (500 chars max).';
+                return resp.status(createStatus).json({
+                    success: createSuccess,
+                    status: createStatus,
+                    message: createMessage
+                });
+            }
+
+            // Password complexity
+            if ((password).length < 9 || !(/[a-z]/.test(password)) ||
+                !(/[A-Z]/.test(password)) || !(/[0-9]/.test(password)) ||
+                !(/[\W_]/.test(password))) {
+                await userFunctions.logValidationFailure(
+                    req.session ? req.session._id : null,
+                    req.session ? req.session.username : null,
+                    '/create-account',
+                    'POST',
+                    'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.'
+                );
+
+                createSuccess = false;
+                createStatus = 400;
+                createMessage = 'Error. Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.';
+                return resp.status(createStatus).json({
+                    success: createSuccess,
+                    status: createStatus,
+                    message: createMessage
+                });
+            }
+
+            if (password !== confirmPassword) {
+                await userFunctions.logValidationFailure(
+                    req.session ? req.session._id : null,
+                    req.session ? req.session.username : null,
+                    '/create-account',
+                    'POST',
+                    'Passwords do not match.'
+                );
+
+                createSuccess = false;
+                createStatus = 400;
+                createMessage = 'Error. Passwords do not match.';
+                return resp.status(createStatus).json({
+                    success: createSuccess,
+                    status: createStatus,
+                    message: createMessage
+                });
+            }
+
+            if (securityQn1 === securityQn2) {
+                await userFunctions.logValidationFailure(
+                    req.session ? req.session._id : null,
+                    req.session ? req.session.username : null,
+                    '/create-account',
+                    'POST',
+                    'Security questions must be different.'
+                );
+
+                createSuccess = false;
+                createStatus = 400;
+                createMessage = 'Error. Security questions must be different.';
+                return resp.status(createStatus).json({
+                    success: createSuccess,
+                    status: createStatus,
+                    message: createMessage
+                });
+            }
+
             [createSuccess, createStatus, createMessage] =
                 await userFunctions.createAccount(
                     req.body.username,
@@ -88,6 +238,53 @@ function add(server) {
         let findStatus, findMessage, user;
 
         console.log('LOGIN ATTEMPT body:', req.body); // debug
+
+        if (username.length > 20 || password.length > 20) {
+            await userFunctions.logValidationFailure(
+                req.session ? req.session._id : null,
+                req.session ? req.session.username : null,
+                '/login',
+                'POST',
+                'Username or password too long.'
+            );
+
+            // log the auth attempt even if userId is unknown
+            await userFunctions.recordLoginAttempt(
+                null,                 // userId
+                username || null,     // username attempted
+                false,                // success
+                '/login',
+                'POST'
+            );
+
+            return res.status(400).json({
+                message: 'Error. Username or password too long (20 chars max).'
+            });
+        }
+
+        //Check if username or password has white space
+        if (username.includes(' ') || password.includes(' ')) {
+            await userFunctions.logValidationFailure(
+                req.session ? req.session._id : null,
+                req.session ? req.session.username : null,
+                '/login',
+                'POST',
+                'Username or password contains white space.'
+            );
+
+            // log the auth attempt even if userId is unknown
+            await userFunctions.recordLoginAttempt(
+                null,                 // userId
+                username || null,     // username attempted
+                false,                // success
+                '/login',
+                'POST'
+            );
+
+            return res.status(400).json({
+                message: 'Error. Username or password contains white space.'
+            });
+        }
 
         // Case 1: Missing username or password
         if (!username || !password) {
@@ -288,6 +485,28 @@ function add(server) {
 
         console.log('Forgot password for:', username);
 
+        if (!username) {
+            await userFunctions.logValidationFailure(
+                req.session ? req.session._id : null,
+                username,
+                '/forgot-password',
+                'GET',
+                'No username provided.'
+            );
+            return resp.status(400).json({ message: 'Error. No username provided.' });
+        }
+
+        if (username.length > 20) {
+            await userFunctions.logValidationFailure(
+                req.session ? req.session._id : null,
+                username,
+                '/forgot-password',
+                'GET',
+                'Username too long.'
+            );
+            return resp.status(400).json({ message: 'Error. Username too long (20 chars max).' });
+        }
+
         try {
             const user = await userModel.findOne({ user: username });
 
@@ -402,6 +621,30 @@ function add(server) {
     });
 
     server.post('/log-access-control-failure', async (req, resp) => {
+        if (req.body.area == 'forgot-password-name') {
+            await userFunctions.logValidationFailure(
+                req.session ? req.session._id : null,
+                req.session ? req.session.username : null,
+                '/forgot-password',
+                'POST',
+                'User attempted to access forgot password page with too long name.'
+            );
+            resp.status(200).json({ message: 'Access control failure logged successfully.' });
+            return;
+        }
+
+        if (req.body.area == 'forgot-password') {
+            await userFunctions.logValidationFailure(
+                req.session ? req.session._id : null,
+                req.session ? req.session.username : null,
+                '/forgot-password',
+                'POST',
+                'User attempted to access forgot password page without a usernme.'
+            );
+            resp.status(200).json({ message: 'Access control failure logged successfully.' });
+            return;
+        }
+
         if (req.body.area == 'create-comment') {
             await userFunctions.logAccessControlFailure(
                 req.session ? req.session._id : null,

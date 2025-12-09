@@ -4,12 +4,14 @@ $(document).ready(function () {
         let logUsername = $('#log-username').val()
 
         if (logUsername.length < 1) {
+            $.post('/log-access-control-failure', { area: 'forgot-password' });
             alert('Please input a username to continue.');
             return;
         }
 
         if (logUsername.length > 20) {
-            alert('Username must be less than 20 characters before continuing.');
+            $.post('/log-access-control-failure', { area: 'forgot-password-name' });
+            alert('Username is too long.');
             return;
         }
 
@@ -105,13 +107,14 @@ $(document).ready(function () {
             securityQn1: $("#securityQuestion1").val(),
             securityQn2: $("#securityQuestion2").val(),
             securityAnswer1: $("#security-answer-1").val(),
-            securityAnswer2: $("#security-answer-2").val()
+            securityAnswer2: $("#security-answer-2").val(),
+            confirmPassword: $("#create-account-form input[name='confirm-password']").val()
         };
 
-        if ($("#securityQuestion1").val() === $('#securityQuestion2').val()) {
-            alert("Please select different security questions.");
-            return;
-        }
+        // if ($("#securityQuestion1").val() === $('#securityQuestion2').val()) {
+        //     alert("Please select different security questions.");
+        //     return;
+        // }
 
         $("#create-account").hide();
 
@@ -128,10 +131,6 @@ $(document).ready(function () {
     // Login form submission
     $('#login-form').submit(function (event) {
         event.preventDefault();
-
-        if (!checkLoginForm()) {
-            return;
-        }
 
         const username = $("#login-form input[name='username']").val();
         const password = $("#login-form input[name='password']").val();
@@ -240,37 +239,6 @@ function showLogInView() {
     $(".nav-logged-in").show();
 }
 
-function checkWhiteSpace(text) {
-    return text.indexOf(' ') !== -1;
-}
-
-function checkLoginForm() {
-    let username = document.forms["login-form"]["username"].value;
-    let password = document.forms["login-form"]["password"].value;
-
-    if (username.length < 1 || password.length < 1) {
-        alert("Login fields must not be empty.");
-        return false;
-    }
-
-    if (username.length > 20) {
-        alert("Username must be less than 20 characters.");
-        return false;
-    }
-
-    if (password.length > 20) {
-        alert("Password must be less than 20 characters.");
-        return false;
-    }
-
-    if (checkWhiteSpace(username) || checkWhiteSpace(password)) {
-        alert("Username and password must not contain white space.");
-        return false;
-    }
-
-    return true;
-}
-
 function checkCreateAccountForm() {
     let username = document.forms["create-account-form"]["username"].value;
     let password = document.forms["create-account-form"]["password"].value;
@@ -280,48 +248,48 @@ function checkCreateAccountForm() {
     let securityQn1 = $("#security-answer-1").val();
     let securityQn2 = $("#security-answer-2").val();
 
-    if (securityQn1.length > 100 || securityQn2.length > 100) {
-        alert("Answer to Security Questions must be less than 100 characters.");
-        return false;
-    }
+    // if (securityQn1.length > 100 || securityQn2.length > 100) {
+    //     alert("Answer to Security Questions must be less than 100 characters.");
+    //     return false;
+    // }
 
-    if (username.length < 1 || password.length < 1 || confirmPassword.length < 1) {
-        alert("Required fields must not be empty.");
-        return false;
-    }
+    // if (username.length < 1 || password.length < 1 || confirmPassword.length < 1) {
+    //     alert("Required fields must not be empty.");
+    //     return false;
+    // }
 
-    if (username.length > 20) {
-        alert("Username must be less than 20 characters.");
-        return false;
-    }
+    // if (username.length > 20) {
+    //     alert("Username must be less than 20 characters.");
+    //     return false;
+    // }
 
-    if (password.length > 20) {
-        alert("Password must be less than 20 characters.");
-        return false;
-    }
+    // if (password.length > 20) {
+    //     alert("Password must be less than 20 characters.");
+    //     return false;
+    // }
 
-    if (description.length > 500) {
-        alert("Bio must be less than 500 characters.");
-        return false;
-    }
+    // if (description.length > 500) {
+    //     alert("Bio must be less than 500 characters.");
+    //     return false;
+    // }
 
-    if (checkWhiteSpace(username) || checkWhiteSpace(password) || checkWhiteSpace(confirmPassword)) {
-        alert("Username and password must not contain white space.");
-        return false;
-    }
+    // if (checkWhiteSpace(username) || checkWhiteSpace(password) || checkWhiteSpace(confirmPassword)) {
+    //     alert("Username and password must not contain white space.");
+    //     return false;
+    // }
 
-    // Password complexity
-    if ((password).length < 9 || !(/[a-z]/.test(password)) ||
-        !(/[A-Z]/.test(password)) || !(/[0-9]/.test(password)) ||
-        !(/[\W_]/.test(password))) {
-        alert("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
-        return false;
-    }
+    // // Password complexity
+    // if ((password).length < 9 || !(/[a-z]/.test(password)) ||
+    //     !(/[A-Z]/.test(password)) || !(/[0-9]/.test(password)) ||
+    //     !(/[\W_]/.test(password))) {
+    //     alert("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
+    //     return false;
+    // }
 
-    if (password !== confirmPassword) {
-        alert("Passwords do not match. Please try again.");
-        return false;
-    }
+    // if (password !== confirmPassword) {
+    //     alert("Passwords do not match. Please try again.");
+    //     return false;
+    // }
 
     return true;
 }
