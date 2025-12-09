@@ -120,21 +120,6 @@ $(document).ready(function () {
         var content = $("#review-content").val().trim();
         var rating = getRating();
 
-        // Validate the form inputs
-        if (!title || !content || rating === 0) {
-            alert("Please fill in the title, content, and select a star rating.");
-            return; // Exit the function if validation fails
-        }
-
-        if (title.length > 100) {
-            alert('Title too long! (max 100 characters)');
-            return;
-        }
-
-        if (content.length > 500) {
-            alert('Content too long! (max 500 characters)');
-            return;
-        }
 
         // Get uploaded image if available
         var image = $("#add-image").prop('files')[0];
@@ -198,16 +183,6 @@ $(document).ready(function () {
             var content = $("#" + reviewId + " .comment-textarea").val();
             var date = new Date().toLocaleDateString();
 
-            // Validate the form inputs
-            if (!content) {
-                alert("Please put a comment first.");
-                return; // Exit the function if validation fails
-            }
-
-            if (content.length > 500) {
-                alert('Comment too long! (max 500 characters)');
-                return;
-            }
 
             // Get form data
             const formData = {
@@ -327,14 +302,7 @@ $(document).ready(function () {
 
     $('#save-name-btn').click(function () {
         const newName = $('#edit-name-input').val().trim();
-        if (!newName) {
-            alert('Name cannot be empty.');
-            return;
-        }
-        if (newName.length > 100) {
-            alert('Name cannot exceed 100 characters.');
-            return;
-        }
+
         updateCondo({ name: newName }, function () {
             $('#condo-name-display').text(newName);
             $('#edit-name-container').hide();
@@ -360,14 +328,7 @@ $(document).ready(function () {
 
     $('#save-desc-btn').click(function () {
         const newDesc = $('#edit-desc-input').val().trim();
-        if (!newDesc) {
-            alert('Description cannot be empty.');
-            return;
-        }
-        if (newDesc.length > 1000) {
-            alert('Description cannot exceed 1000 characters.');
-            return;
-        }
+
         updateCondo({ description: newDesc }, function () {
             $('#condo-desc-display').text(newDesc);
             $('#edit-desc-container').hide();

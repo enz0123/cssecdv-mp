@@ -114,12 +114,33 @@ function add(server) {
         const { condoId, title, content, rating, image, date } = req.body;
 
         if (!title || !content || !rating || rating === 0 || rating > 5) {
+            await userFunctions.logValidationFailure(
+                req.session ? req.session._id : null,
+                req.session ? req.session.username : null,
+                'create-review',
+                'POST',
+                'Failed to create review: Missing fields or invalid star rating.'
+            );
             return resp.status(400).send({ message: 'Please fill in the title, content, and select a valid star rating (1-5).' });
         }
         if (title.length > 100) {
+            await userFunctions.logValidationFailure(
+                req.session ? req.session._id : null,
+                req.session ? req.session.username : null,
+                'create-review',
+                'POST',
+                'Failed to create review: Title too long'
+            );
             return resp.status(400).send({ message: 'Title too long! (max 100 characters)' });
         }
         if (content.length > 500) {
+            await userFunctions.logValidationFailure(
+                req.session ? req.session._id : null,
+                req.session ? req.session.username : null,
+                'create-review',
+                'POST',
+                'Failed to create review: Content too long'
+            );
             return resp.status(400).send({ message: 'Content too long! (max 500 characters)' });
         }
 
@@ -147,9 +168,23 @@ function add(server) {
         try {
             const content = req.body.content;
             if (!content) {
+                await userFunctions.logValidationFailure(
+                    req.session ? req.session._id : null,
+                    req.session ? req.session.username : null,
+                    'create-comment',
+                    'POST',
+                    'Failed to create comment: No content provided'
+                );
                 return resp.status(400).send({ message: 'Please put a comment first.' });
             }
             if (content.length > 500) {
+                await userFunctions.logValidationFailure(
+                    req.session ? req.session._id : null,
+                    req.session ? req.session.username : null,
+                    'create-comment',
+                    'POST',
+                    'Failed to create comment: Content too long'
+                );
                 return resp.status(400).send({ message: 'Comment too long! (max 500 characters)' });
             }
 
@@ -308,6 +343,29 @@ function add(server) {
         const userId = req.session._id;
 
         try {
+            if (!ObjectId.isValid(reviewId)) {
+                await userFunctions.logValidationFailure(
+                    req.session ? req.session._id : null,
+                    req.session ? req.session.username : null,
+                    'like-button',
+                    'POST',
+                    'Invalid reviewId format.'
+                );
+                return resp.status(400).send({ success: false, message: 'Invalid input.' });
+            }
+
+            if ((isClicked !== "true" && isClicked !== "false") || (isLike !== "true" && isLike !== "false")) {
+                await userFunctions.logValidationFailure(
+                    req.session ? req.session._id : null,
+                    req.session ? req.session.username : null,
+                    'like-button',
+                    'POST',
+                    'Invalid isClicked or isLike value.'
+                );
+                return resp.status(400).send({ success: false, message: 'Invalid input.' });
+            }
+
+
             // Find the review by ID
             const review = await reviewModel.findById(reviewId);
             if (!review) {

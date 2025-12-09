@@ -136,14 +136,35 @@ function add(server) {
             }
 
             if (!name || !description) {
+                await userFunctions.logValidationFailure(
+                    req.session ? req.session._id : null,
+                    req.session ? req.session.username : null,
+                    '/update-condo',
+                    'PATCH',
+                    'Failed to update condo: No name or description provided'
+                );
                 return resp.status(400).json({ message: 'Name and description are required.' });
             }
 
             if (name.length > 100) {
+                await userFunctions.logValidationFailure(
+                    req.session ? req.session._id : null,
+                    req.session ? req.session.username : null,
+                    '/update-condo',
+                    'PATCH',
+                    'Failed to update condo: Name too long'
+                );
                 return resp.status(400).json({ message: 'Name cannot exceed 100 characters.' });
             }
 
             if (description.length > 1000) {
+                await userFunctions.logValidationFailure(
+                    req.session ? req.session._id : null,
+                    req.session ? req.session.username : null,
+                    '/update-condo',
+                    'PATCH',
+                    'Failed to update condo: Description too long'
+                );
                 return resp.status(400).json({ message: 'Description cannot exceed 1000 characters.' });
             }
 
