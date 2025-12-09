@@ -81,6 +81,13 @@ function add(server) {
         const condoId = req.body.condoId;
 
         if (text && text.length > 500) {
+            await userFunctions.logValidationFailure(
+                req.session ? req.session._id : null,
+                req.session ? req.session.username : null,
+                'search-review',
+                'POST',
+                'Failed to search review: Search text too long'
+            );
             return resp.status(400).send({ message: 'Search text too long! (max 500 characters)' });
         }
 

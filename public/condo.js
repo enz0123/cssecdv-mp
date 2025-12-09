@@ -8,105 +8,97 @@ $(document).ready(function () {
         var text = $("#search-review-input").val().toUpperCase();
         var condoId = window.location.pathname.split('/condo/')[1];
 
-        if (text.length > 500) {
-            alert('Search text too long!');
-            return;
-        }
+        $.post('search-review', { text: text, condoId: condoId })
+            .done(function (data) {
+                $(".reviews-container").empty();
 
-        $.post(
-            'search-review',
-            { text: text, condoId: condoId },
-            function (data, status) {
-                if (status === 'success') {
-                    $(".reviews-container").empty();
+                data.reviews.forEach(function (review) {
+                    // Create a new review element
+                    var $review = $('<div>').attr('id', review._id).addClass('grid-item');
 
-                    data.reviews.forEach(function (review) {
-                        // Create a new review element
-                        var $review = $('<div>').attr('id', review._id).addClass('grid-item');
+                    // Create review header
+                    var $reviewHeader = $('<div>').addClass('review-header');
+                    var $reviewHeaderLeft = $('<div>').addClass('review-header-left');
+                    $reviewHeaderLeft.append($('<h3>').text(review.title));
+                    $reviewHeaderLeft.append('Posted on ' + review.date);
+                    $reviewHeader.append($reviewHeaderLeft);
 
-                        // Create review header
-                        var $reviewHeader = $('<div>').addClass('review-header');
-                        var $reviewHeaderLeft = $('<div>').addClass('review-header-left');
-                        $reviewHeaderLeft.append($('<h3>').text(review.title));
-                        $reviewHeaderLeft.append('Posted on ' + review.date);
-                        $reviewHeader.append($reviewHeaderLeft);
-
-                        // Create star rating
-                        var $reviewHeaderRight = $('<div>');
-                        var $starRating = $('<div>').addClass('star-rating').attr('id', 'rating');
-                        review.rating.forEach(function (rating) {
-                            var $star = $('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="presentation"> <path d="M12 17.27l4.15 2.51c.76.46 1.69-.22 1.49-1.08l-1.1-4.72 3.67-3.18c.67-.58.31-1.68-.57-1.75l-4.83-.41-1.89-4.46c-.34-.81-1.5-.81-1.84 0L9.19 8.63l-4.83.41c-.88.07-1.24 1.17-.57 1.75l3.67 3.18-1.1 4.72c-.2.86.73 1.54 1.49 1.08l4.15-2.5z"></path></svg>');
-                            if (rating) {
-                                $star.addClass('star-on');
-                            } else {
-                                $star.addClass('star-off');
-                            }
-                            $starRating.append($star);
-                        });
-                        $reviewHeaderRight.append($starRating);
-                        $reviewHeader.append($reviewHeaderRight);
-                        $review.append($reviewHeader);
-
-                        // Create review body
-                        var $reviewBody = $('<div>').addClass('review-body');
-                        $reviewBody.append($('<p>').text(review.content));
-                        $review.append($reviewBody);
-
-                        // Create review picture (if image exists)
-                        if (review.image) {
-                            var $reviewPicture = $('<div>').addClass('review-picture');
-                            $reviewPicture.append($('<img>').attr('src', review.image));
-                            $review.append($reviewPicture);
+                    // Create star rating
+                    var $reviewHeaderRight = $('<div>');
+                    var $starRating = $('<div>').addClass('star-rating').attr('id', 'rating');
+                    review.rating.forEach(function (rating) {
+                        var $star = $('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="presentation"> <path d="M12 17.27l4.15 2.51c.76.46 1.69-.22 1.49-1.08l-1.1-4.72 3.67-3.18c.67-.58.31-1.68-.57-1.75l-4.83-.41-1.89-4.46c-.34-.81-1.5-.81-1.84 0L9.19 8.63l-4.83.41c-.88.07-1.24 1.17-.57 1.75l3.67 3.18-1.1 4.72c-.2.86.73 1.54 1.49 1.08l4.15-2.5z"></path></svg>');
+                        if (rating) {
+                            $star.addClass('star-on');
+                        } else {
+                            $star.addClass('star-off');
                         }
-
-                        // Create review footer
-                        var $reviewFooter = $('<div>').addClass('review-footer');
-                        var $reviewProfile = $('<div>').addClass('review-profile');
-                        $reviewProfile.append($('<a>').attr('href', '/profile/' + review.author.user).append($('<img>').attr('src', review.author.picture)));
-                        $reviewProfile.append($('<div>').append($('<a>').attr('href', '/profile/' + review.author.user).append($('<b>').text(review.author.user))).append('<br/>' + review.author.job));
-                        $reviewFooter.append($reviewProfile);
-                        var $reactPost = $('<div>').addClass('react-post');
-                        $reactPost.append($('<div>').addClass('icon-like').append('<button type="button" class="fa fa-thumbs-up"></button><button type="button" class="fa fa-thumbs-down"></button>'));
-                        $reactPost.append(review.totalLikes + ' people liked');
-                        $reviewFooter.append($reactPost);
-                        $review.append($reviewFooter);
-
-                        // Create comments section
-                        $review.append($('<div><hr/><h4>Comments:</h4></div>'));
-                        var $commentForm = $('<form>').addClass('create-comment-form').attr('method', 'post');
-                        var $commentContainer = $('<div>').addClass('comment-container');
-                        $commentContainer.append($('<textarea>').addClass('comment-textarea').attr('placeholder', 'Write your comment here...'));
-                        $commentContainer.append($('<button>').addClass('comment-button').text('Comment'));
-                        $commentForm.append($commentContainer);
-                        $review.append($commentForm);
-                        var $comments = $('<div>').addClass('comments');
-                        review.comments.forEach(function (comment) {
-                            var $comment = $('<div>').addClass('comment');
-                            var $commentDiv = $('<div>');
-                            $commentDiv.append($('<a>').attr('href', '/profile/' + comment.user.user).append($('<img>').attr('src', comment.user.picture)));
-                            var $commentRight = $('<div>').addClass('comment-right');
-                            var $commentHeader = $('<div>');
-                            $commentHeader.append($('<a>').attr('href', '/profile/' + comment.user.user).append($('<b>').text(comment.user.user)));
-                            if (comment.user.job === 'Owner') {
-                                $commentHeader.append($('<span>').addClass('verified-checkmark').text('✔️'));
-                            }
-                            $commentHeader.append(comment.date);
-                            $commentRight.append($commentHeader);
-                            $commentRight.append($('<div>').append($('<p>').text(comment.content)));
-                            $comment.append($commentDiv, $commentRight);
-                            $comments.append($comment);
-                        });
-                        $review.append($comments);
-
-                        // Append the constructed review element to the reviews-container
-                        $('.reviews-container').append($review);
+                        $starRating.append($star);
                     });
-                }
-                else {
-                    alert('error');
-                }
-            }
-        );
+                    $reviewHeaderRight.append($starRating);
+                    $reviewHeader.append($reviewHeaderRight);
+                    $review.append($reviewHeader);
+
+                    // Create review body
+                    var $reviewBody = $('<div>').addClass('review-body');
+                    $reviewBody.append($('<p>').text(review.content));
+                    $review.append($reviewBody);
+
+                    // Create review picture (if image exists)
+                    if (review.image) {
+                        var $reviewPicture = $('<div>').addClass('review-picture');
+                        $reviewPicture.append($('<img>').attr('src', review.image));
+                        $review.append($reviewPicture);
+                    }
+
+                    // Create review footer
+                    var $reviewFooter = $('<div>').addClass('review-footer');
+                    var $reviewProfile = $('<div>').addClass('review-profile');
+                    $reviewProfile.append($('<a>').attr('href', '/profile/' + review.author.user).append($('<img>').attr('src', review.author.picture)));
+                    $reviewProfile.append($('<div>').append($('<a>').attr('href', '/profile/' + review.author.user).append($('<b>').text(review.author.user))).append('<br/>' + review.author.job));
+                    $reviewFooter.append($reviewProfile);
+                    var $reactPost = $('<div>').addClass('react-post');
+                    $reactPost.append($('<div>').addClass('icon-like').append('<button type="button" class="fa fa-thumbs-up"></button><button type="button" class="fa fa-thumbs-down"></button>'));
+                    $reactPost.append(review.totalLikes + ' people liked');
+                    $reviewFooter.append($reactPost);
+                    $review.append($reviewFooter);
+
+                    // Create comments section
+                    $review.append($('<div><hr/><h4>Comments:</h4></div>'));
+                    var $commentForm = $('<form>').addClass('create-comment-form').attr('method', 'post');
+                    var $commentContainer = $('<div>').addClass('comment-container');
+                    $commentContainer.append($('<textarea>').addClass('comment-textarea').attr('placeholder', 'Write your comment here...'));
+                    $commentContainer.append($('<button>').addClass('comment-button').text('Comment'));
+                    $commentForm.append($commentContainer);
+                    $review.append($commentForm);
+                    var $comments = $('<div>').addClass('comments');
+                    review.comments.forEach(function (comment) {
+                        var $comment = $('<div>').addClass('comment');
+                        var $commentDiv = $('<div>');
+                        $commentDiv.append($('<a>').attr('href', '/profile/' + comment.user.user).append($('<img>').attr('src', comment.user.picture)));
+                        var $commentRight = $('<div>').addClass('comment-right');
+                        var $commentHeader = $('<div>');
+                        $commentHeader.append($('<a>').attr('href', '/profile/' + comment.user.user).append($('<b>').text(comment.user.user)));
+                        if (comment.user.job === 'Owner') {
+                            $commentHeader.append($('<span>').addClass('verified-checkmark').text('✔️'));
+                        }
+                        $commentHeader.append(comment.date);
+                        $commentRight.append($commentHeader);
+                        $commentRight.append($('<div>').append($('<p>').text(comment.content)));
+                        $comment.append($commentDiv, $commentRight);
+                        $comments.append($comment);
+                    });
+                    $review.append($comments);
+
+                    // Append the constructed review element to the reviews-container
+                    $('.reviews-container').append($review);
+                });
+            })
+            .fail(function (xhr, status, error) {
+                console.error('Error searching reviews:', error);
+                const msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Error searching reviews.';
+                alert(msg);
+            });
 
 
     })
