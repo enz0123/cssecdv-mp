@@ -23,6 +23,16 @@ const isAuthenticated = (actionOrReq, res, next) => {
         }
 
         if (actionName) {
+            if (actionName == 'delete-review') {
+                await userFunctions.logAccessControlFailure(
+                    req.session ? req.session._id : null,
+                    req.session ? req.session.username : null,
+                    '/delete-review',
+                    'POST',
+                    'Unauthenticated user attempted to delete a review.'
+                );
+            }
+
             if (actionName == 'create-comment') { //DONE
                 await userFunctions.logAccessControlFailure(
                     req.session ? req.session._id : null,

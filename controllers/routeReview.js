@@ -23,15 +23,33 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage }); // Store uploaded files in the 'uploads' directory
 
 function add(server) {
-    server.post('/delete-review', auth.isAuthenticated, async function (req, resp, next) {
+    server.post('/delete-review', auth.isAuthenticated('delete-review'), async function (req, resp, next) {
         const condoId = req.body.condoId;
         const reviewId = req.body.reviewId;
+
+        if (!condoId || !reviewId) {
+            await userFunctions.logValidationFailure(
+                req.session ? req.session._id : null,
+                req.session ? req.session.username : null,
+                'delete-review',
+                'POST',
+                'Failed to delete review: Missing fields.'
+            );
+            return resp.status(400).send({ deleted: 0, message: 'Please fill in the condo ID and review ID.' });
+        }
 
         try {
             console.log('Review to be Deleted: ' + reviewId);
 
             const review = await reviewModel.findById(reviewId);
             if (!review) {
+                await userFunctions.logValidationFailure(
+                    req.session ? req.session._id : null,
+                    req.session ? req.session.username : null,
+                    'delete-review',
+                    'POST',
+                    'Failed to delete review: Review not found.'
+                );
                 return resp.status(404).send({ deleted: 0, message: 'Review not found' });
             }
 
@@ -40,10 +58,23 @@ function add(server) {
             console.log('Title of deleted review: ' + reviewTitle);
             console.log('ID of author: ' + reviewAuthor);
 
+
             const author = await userModel.findById(reviewAuthor);
             if (author) {
                 const compareId = new ObjectId(reviewId);
                 const listOfReviews = [];
+
+                //Check if author's ID is the same as session
+                if (!author._id.equals(req.session._id)) {
+                    await userFunctions.logAccessControlFailure(
+                        req.session ? req.session._id : null,
+                        req.session ? req.session.username : null,
+                        'delete-review',
+                        'POST',
+                        'Unauthenticated user attempted to delete a review.'
+                    );
+                    return resp.status(401).send({ deleted: 0, message: 'Unauthorized. Please log in.' });
+                }
 
                 console.log('Name of author: ' + author.user);
                 console.log('Old list');
