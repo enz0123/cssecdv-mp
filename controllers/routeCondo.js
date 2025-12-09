@@ -113,7 +113,7 @@ function add(server) {
         }
     });
 
-    server.patch('/update-condo/:id', auth.isAuthenticated, async (req, resp, next) => {
+    server.patch('/update-condo/:id', auth.isAuthenticated('update-condo'), async (req, resp, next) => {
         try {
             const condoId = req.params.id;
             const { name, description } = req.body;
@@ -125,6 +125,13 @@ function add(server) {
             });
 
             if (!ownership) {
+                await userFunctions.logAccessControlFailure(
+                    req.session ? req.session._id : null,
+                    req.session ? req.session.username : null,
+                    '/update-condo',
+                    'PATCH',
+                    'Unauthenticated user attempted to update a condo they do not own.'
+                );
                 return resp.status(403).json({ message: 'Unauthorized. You do not own this condo.' });
             }
 

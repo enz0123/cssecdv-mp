@@ -33,6 +33,16 @@ const isAuthenticated = (actionOrReq, res, next) => {
                 );
             }
 
+            if (actionName == 'update-condo') {
+                await userFunctions.logAccessControlFailure(
+                    req.session ? req.session._id : null,
+                    req.session ? req.session.username : null,
+                    '/update-condo',
+                    'PATCH',
+                    'Unauthenticated user attempted to update a condo.'
+                );
+            }
+
             if (actionName == 'create-review') {
                 await userFunctions.logAccessControlFailure(
                     req.session ? req.session._id : null,
