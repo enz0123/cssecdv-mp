@@ -41,6 +41,18 @@ function add(server) {
     server.post('/search-condo', async (req, resp, next) => {
         try {
             const text = req.body.text;
+
+            if (text.length > 500) {
+                await userFunctions.logValidationFailure(
+                    req.session ? req.session._id : null,
+                    req.session ? req.session.username : null,
+                    '/search-condo',
+                    'POST',
+                    'Search text too long!'
+                );
+                return resp.status(400).json({ message: 'Search text too long!' });
+            }
+
             const listOfCondos = [];
 
             const condos = await condoModel.find();

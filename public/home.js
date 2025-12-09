@@ -1,8 +1,8 @@
-$(document).ready(function(){
-    function appendCondos(condos){
+$(document).ready(function () {
+    function appendCondos(condos) {
         $("#condo-container").empty();
 
-        condos.forEach(function(item){
+        condos.forEach(function (item) {
             const anchor = $('<a>').attr('href', `/condo/${item.id}`);
             const div = $('<div>');
             const imgContainer = $('<div>').addClass('condo-image-container');
@@ -13,8 +13,8 @@ $(document).ready(function(){
             const desc = $('<p>').text(item.description);
             const ratingContainer = $('<div>').addClass('condo-rating-container');
             const ratingText = $('<p>').text(`Average Rating: ${item.rating}/5`);
-            const progress = $('<progress>').attr('value', item.rating).attr('max',5);
-        
+            const progress = $('<progress>').attr('value', item.rating).attr('max', 5);
+
             ratingContainer.append(ratingText, progress);
             descContainer.append(desc);
             nameContainer.append(name);
@@ -23,49 +23,56 @@ $(document).ready(function(){
             anchor.append(div);
 
             $("#condo-container").append(anchor);
-            });
+        });
     }
 
-    $("#filter-rating").submit(function(event){
+    $("#filter-rating").submit(function (event) {
         event.preventDefault();
 
         var rating = $("#filter").val();
-        
+
         $.post(
             'filter-condo',
-            {rating: rating},
-            function(data, status){
-                if(status === 'success'){
+            { rating: rating },
+            function (data, status) {
+                if (status === 'success') {
                     appendCondos(data.condos);
-                }else{
+                } else {
                     alert('error');
                 }
             }
         );
     });
 
-    $("#search-condo").submit(function(event){
+    $("#search-condo").submit(function (event) {
         event.preventDefault();
 
         var text = $("#condo-name").val();
         text = text.toUpperCase();
 
-        if(text.length > 500){
-            alert('Search text too long!');
-            return;
-        }
+        // if(text.length > 500){
+        //     alert('Search text too long!');
+        //     return;
+        // }
 
-        $.post(
-            'search-condo',
-            {text: text},
-            function(data, status){
-                if(status === 'success'){
-                    appendCondos(data.condos);
-                }
-                else{
-                    alert('error');
-                }
-            }
-        );
+        // $.post(
+        //     'search-condo',
+        //     { text: text },
+        //     function (data, status) {
+        //         if (status === 'success') {
+        //             appendCondos(data.condos);
+        //         }
+        //         else {
+        //             alert('error');
+        //         }
+        //     }
+        // );
+
+        $.post('search-condo', { text: text }).done(function (response) {
+            appendCondos(response.condos);
+        }).fail(function (xhr, status, error) {
+            console.error('Error searching condos:', error);
+            alert(xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Error searching condos.');
+        });
     });
 });
