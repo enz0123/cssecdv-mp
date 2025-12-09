@@ -1,14 +1,17 @@
-$(document).ready(function(){
+$(document).ready(function () {
     // likes and dislikes
-    $(".fa").on("click", async function() {
+    $(".fa").on("click", async function () {
         // Store a reference to $(this) in a variable
         var $form = $(this);
 
-        $.get('/loggedInStatus', async function(data) {
-            if(!data.isAuthenticated) {
+        $.get('/loggedInStatus', async function (data) {
+            if (!data.isAuthenticated) {
+                $.post('/log-access-control-failure', {
+                    area: 'like-button'
+                });
                 alert("You must be logged in to like a review.");
                 return;
-            } 
+            }
 
             var likeClass = $form.attr("class");
             var reviewId = $form.closest('.grid-item').attr('id');
@@ -27,23 +30,23 @@ $(document).ready(function(){
                 if ($otherLike.hasClass("clicked")) {
                     await submitLike(reviewId, true, false);
                     $otherLike.toggleClass("clicked");
-                }   
+                }
             } else {
                 var $otherLike = $form.closest('.react-post').find(".fa-thumbs-up");
                 if ($otherLike.hasClass("clicked")) {
                     await submitLike(reviewId, true, true);
                     $otherLike.toggleClass("clicked");
-                }  
+                }
             }
 
             $.post(
                 'like',
-                {reviewId: reviewId, isClicked: isClicked, isLike: isLike},
-                function(data, status){
-                    if(status === 'success'){
+                { reviewId: reviewId, isClicked: isClicked, isLike: isLike },
+                function (data, status) {
+                    if (status === 'success') {
                         $totalLikes.text(data.totalLikes + " people liked");
                     }
-                    else{
+                    else {
                         alert('error');
                     }
                 }
@@ -56,9 +59,9 @@ $(document).ready(function(){
 async function submitLike(reviewId, isClicked, isLike) {
     await $.post(
         'like',
-        {reviewId: reviewId, isClicked: isClicked, isLike: isLike},
-        function(data, status){
-            if(status !== 'success'){
+        { reviewId: reviewId, isClicked: isClicked, isLike: isLike },
+        function (data, status) {
+            if (status !== 'success') {
                 alert('error');
             }
         }

@@ -401,6 +401,46 @@ function add(server) {
         }
     });
 
+    server.post('/log-access-control-failure', async (req, resp) => {
+        if (req.body.area == 'create-comment') {
+            await userFunctions.logAccessControlFailure(
+                req.session ? req.session._id : null,
+                req.session ? req.session.username : null,
+                '/create-comment',
+                'POST',
+                'Unauthenticated user attempted to create a comment.'
+            );
+            resp.status(200).json({ message: 'Access control failure logged successfully.' });
+            return;
+        }
+
+        if (req.body.area == 'create-review') {
+            await userFunctions.logAccessControlFailure(
+                req.session ? req.session._id : null,
+                req.session ? req.session.username : null,
+                '/create-review',
+                'POST',
+                'Unauthenticated user attempted to create a review.'
+            );
+            resp.status(200).json({ message: 'Access control failure logged successfully.' });
+            return;
+        }
+
+        if (req.body.area == 'like-button') {
+            await userFunctions.logAccessControlFailure(
+                req.session ? req.session._id : null,
+                req.session ? req.session.username : null,
+                '/like-button',
+                'POST',
+                'Unauthenticated user attempted to like a review.'
+            );
+            resp.status(200).json({ message: 'Access control failure logged successfully.' });
+            return;
+        }
+
+        resp.status(400).json({ message: 'Invalid area.' });
+    });
+
 
     // Edit profile submit
     server.patch('/edit-profile-submit', async (req, resp) => {

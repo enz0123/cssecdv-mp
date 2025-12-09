@@ -186,6 +186,9 @@ $(document).ready(function () {
 
         $.get('/loggedInStatus', function (data) {
             if (!data.isAuthenticated) {
+                $.post('/log-access-control-failure', {
+                    area: 'create-comment'
+                });
                 alert("You must be logged in to create a comment.");
                 return;
             }
@@ -264,6 +267,9 @@ $(document).ready(function () {
             if (data.isAuthenticated) {
                 $("#create-review").show();
             } else {
+                $.post('/log-access-control-failure', {
+                    area: 'create-review'
+                });
                 alert("You must be logged in to create a review.");
             }
         });
