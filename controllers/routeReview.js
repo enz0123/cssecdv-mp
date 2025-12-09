@@ -107,6 +107,7 @@ function add(server) {
         }
     });
 
+
     server.post('/search-review', async function (req, resp, next) {
         const text = req.body.text;
         const condoId = req.body.condoId;
@@ -283,6 +284,8 @@ function add(server) {
     server.patch('/update-review/:id', auth.isAuthenticated, async (req, resp, next) => {
         try {
             const reviewId = req.params.id;
+
+            console.log(reviewId)
             const { title, content, rating } = req.body;
 
             if (!title || !content || !rating || rating === 0 || rating > 5) {
@@ -293,6 +296,23 @@ function add(server) {
             }
             if (content.length > 500) {
                 return resp.status(400).send({ message: 'Content too long! (max 500 characters)' });
+            }
+
+            const review = await reviewModel.findById(reviewId);
+            if (!review) {
+                return resp.status(404).send({ message: 'Review not found' });
+            }
+
+            // Check ownership
+            if (!review.author.equals(req.session._id)) {
+                await userFunctions.logAccessControlFailure(
+                    req.session ? req.session._id : null,
+                    req.session ? req.session.username : null,
+                    '/update-review',
+                    'PATCH',
+                    'Unauthenticated/Unauthorized user attempted to update a review.'
+                );
+                return resp.status(401).send({ message: 'Unauthorized. You can only edit your own reviews.' });
             }
 
             const result = await reviewModel.findByIdAndUpdate(reviewId, req.body);
@@ -313,6 +333,8 @@ function add(server) {
             const reviews = await reviewModel.find();
             const { content, date, isEdited } = req.body;
 
+            console.log(commentId)
+
             if (!content) {
                 return resp.status(400).send({ message: 'Please fill in the content.' });
             }
@@ -326,6 +348,20 @@ function add(server) {
                 const index = review.comments.findIndex(comment => comment._id == commentId);
 
                 if (index !== -1) {
+                    // Check ownership of the comment
+                    // Assuming comment.user is an ObjectId or string that matches req.session._id
+                    // The schema likely stores user as ObjectId in 'user' field of comment
+                    if (review.comments[index].user.toString() !== req.session._id.toString()) {
+                        await userFunctions.logAccessControlFailure(
+                            req.session ? req.session._id : null,
+                            req.session ? req.session.username : null,
+                            '/update-comment',
+                            'PATCH',
+                            'Unauthenticated/Unauthorized user attempted to update a comment.'
+                        );
+                        return resp.status(401).send({ message: 'Unauthorized. You can only edit your own comments.' });
+                    }
+
                     review.comments[index].content = content;
                     review.comments[index].date = date;
                     review.comments[index].isEdited = isEdited;
@@ -357,6 +393,18 @@ function add(server) {
             for (const review of reviews) {
                 const index = review.comments.findIndex(comment => comment._id == commentId);
                 if (index !== -1) {
+                    // Check ownership of the comment
+                    if (review.comments[index].user.toString() !== req.session._id.toString()) {
+                        await userFunctions.logAccessControlFailure(
+                            req.session ? req.session._id : null,
+                            req.session ? req.session.username : null,
+                            '/delete-comment',
+                            'POST',
+                            'Unauthenticated/Unauthorized user attempted to delete a comment.'
+                        );
+                        return resp.status(401).send({ deleted: 0, message: 'Unauthorized. You can only delete your own comments.' });
+                    }
+
                     review.comments.splice(index, 1);
                     await review.save();
                     deleted = true;
