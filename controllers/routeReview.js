@@ -110,7 +110,7 @@ function add(server) {
         }
     });
 
-    server.patch('/create-review', auth.isAuthenticated, async (req, resp, next) => {
+    server.patch('/create-review', auth.isAuthenticated('create-review'), async (req, resp, next) => {
         const { condoId, title, content, rating, image, date } = req.body;
 
         if (!title || !content || !rating || rating === 0 || rating > 5) {
@@ -143,7 +143,7 @@ function add(server) {
     });
 
     // create comment POST
-    server.post('/create-comment', auth.isAuthenticated, async (req, resp, next) => {
+    server.post('/create-comment', auth.isAuthenticated('create-comment'), async (req, resp, next) => {
         try {
             const content = req.body.content;
             if (!content) {
@@ -303,7 +303,7 @@ function add(server) {
         }
     });
 
-    server.post('/like', auth.isAuthenticated, async (req, resp, next) => {
+    server.post('/like', auth.isAuthenticated('like-button'), async (req, resp, next) => {
         let { reviewId, isClicked, isLike } = req.body;
         const userId = req.session._id;
 
